@@ -8,12 +8,34 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import { useEffect, useState } from "react";
-import { getSantri } from "@/services/santri";
+import { getSantri, deleteSantri } from "@/services/santri";
 import { Santri } from "@/types/santri";
+import Link from "next/link";
 
 export default function SantriTable() {
     const [data, setData] = useState<Santri[]>([]);
     const [loading, setLoading] = useState(true);
+
+    const handleDelete = async (id: number) => {
+        const confirmed = confirm(
+            "Yakin ingin menghapus data santri ini?"
+        );
+
+        if (!confirmed) return;
+
+        try {
+            await deleteSantri(id);
+
+            setData((prev) =>
+                prev.filter((item) => item.id !== id)
+            );
+
+            alert("Data berhasil dihapus");
+        } catch (error) {
+            console.error(error);
+            alert("Gagal menghapus data");
+        }
+    };
 
     useEffect(() => {
         getSantri()
@@ -32,12 +54,6 @@ export default function SantriTable() {
                         {/* Table Header */}
                         <TableHeader className="border-b border-gray-100 dark:border-white/5]">
                             <TableRow>
-                                {/* <TableCell
-                                    isHeader
-                                    className="px-5 py-3 font-semibold text-black text-start text-theme-xs dark:text-gray-400"
-                                >
-                                    NIS
-                                </TableCell> */}
                                 <TableCell
                                     isHeader
                                     className="px-5 py-3 font-semibold text-black text-start text-theme-xs dark:text-gray-400"
@@ -55,6 +71,12 @@ export default function SantriTable() {
                                     className="px-5 py-3 font-semibold text-black text-start text-theme-xs dark:text-gray-400"
                                 >
                                     Jenis Kelamin
+                                </TableCell>
+                                <TableCell
+                                    isHeader
+                                    className="px-5 py-3 font-semibold text-black text-start text-theme-xs dark:text-gray-400"
+                                >
+                                    Tanggal Lahir
                                 </TableCell>
                                 <TableCell
                                     isHeader
@@ -78,6 +100,12 @@ export default function SantriTable() {
                                     isHeader
                                     className="px-5 py-3 font-semibold text-black text-start text-theme-xs dark:text-gray-400"
                                 >
+                                    Status
+                                </TableCell>
+                                <TableCell
+                                    isHeader
+                                    className="px-5 py-3 font-semibold text-black text-start text-theme-xs dark:text-gray-400"
+                                >
                                     Aksi
                                 </TableCell>
                             </TableRow>
@@ -85,13 +113,10 @@ export default function SantriTable() {
 
                         {/* Table Body */}
                         <TableBody className="divide-y divide-gray-100 dark:divide-white/5">
-                            {data.map((santri) => (
+                            {data.map((santri, index) => (
                                 <TableRow key={santri.id}>
-                                    {/* <TableCell className="px-5 py-4 sm:px-6 text-start">
-                                        {santri.nis}
-                                    </TableCell> */}
                                     <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
-                                        {santri.id}
+                                        {index + 1}
                                     </TableCell>
                                     <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
                                         {santri.nama}
@@ -100,6 +125,9 @@ export default function SantriTable() {
                                         {santri.jenis_kelamin === "L"
                                             ? "Laki-laki"
                                             : "Perempuan"}
+                                    </TableCell>
+                                    <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
+                                        {santri.tanggal_lahir}
                                     </TableCell>
                                     <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
                                         {santri.nama_wali}
@@ -111,9 +139,22 @@ export default function SantriTable() {
                                         {santri.alamat}
                                     </TableCell>
                                     <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
-                                        <button className="text-blue-500">Edit</button>
+                                        {santri.status}
+                                    </TableCell>
+                                    <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
+                                        <Link
+                                            href={`/santri/edit/${santri.id}`}
+                                            className="text-blue-500 hover:underline"
+                                        >
+                                            Edit
+                                        </Link>
                                         <span className="m-1 font-semibold text-gray-500">|</span>
-                                        <button className="text-red-500">Hapus</button>
+                                        <button
+                                            onClick={() => handleDelete(santri.id)}
+                                            className="text-red-500 hover:underline"
+                                        >
+                                            Hapus
+                                        </button>
                                     </TableCell>
                                 </TableRow>
                             ))}

@@ -2,31 +2,43 @@
 
 import { useState } from "react";
 import { createSantri } from "@/services/santri";
+import Label from "@/components/form/santri/Label";
+import Input from "@/components/form/santri/InputField";
+import Select from "@/components/form/santri/Select";
+import DatePicker from "@/components/form/santri/date-picker";
+import TextArea from "@/components/form/santri/TextArea";
+import { ChevronDownIcon } from "@/icons";
+import { useRouter } from "next/navigation";
+import { Santri, SantriFormData } from "@/types/santri";
 
 type Props = {
-    onSuccess?: () => void;
+    initialData?: Santri;
+    onSubmit?: (data: SantriFormData) => Promise<void>;
 };
 
-export default function SantriForm({ onSuccess }: Props) {
-    const [form, setForm] = useState({
-        nama: "",
-        jenis_kelamin: "L" as "L" | "P",
-        tanggal_lahir: "",
-        nama_wali: "",
-        kontak_wali: "",
-        alamat: "",
-        tanggal_masuk: "",
+export default function SantriForm({
+    initialData,
+    onSubmit,
+}: Props) {
+    const router = useRouter();
+
+    const [form, setForm] = useState<SantriFormData>({
+        nama: initialData?.nama || "",
+        jenis_kelamin: initialData?.jenis_kelamin || "L",
+        tanggal_lahir: initialData?.tanggal_lahir || "",
+        nama_wali: initialData?.nama_wali || "",
+        kontak_wali: initialData?.kontak_wali || "",
+        alamat: initialData?.alamat || "",
+        tanggal_masuk: initialData?.tanggal_masuk || "",
+        status: initialData?.status || "pending",
     });
 
-    const [loading] = useState(false);
+    const [loading, setLoading] = useState(false);
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-
-        await createSantri(form);
-
-        onSuccess?.();
-    };
+    const options = [
+        { value: "L", label: "Laki-Laki" },
+        { value: "P", label: "Perempuan" },
+    ];
 
     const update = (field: string, value: string) => {
         setForm((prev) => ({
@@ -35,70 +47,111 @@ export default function SantriForm({ onSuccess }: Props) {
         }));
     };
 
+    const handleSelectChange = (value: string) => {
+        update("jenis_kelamin", value as "L" | "P");
+    };
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+
+        try {
+            setLoading(true);
+
+            if (onSubmit) {
+                await onSubmit(form);
+            } else {
+                await createSantri(form);
+            }
+
+            router.push("/santri");
+        } catch (error) {
+            console.error("Gagal menyimpan santri:", error);
+            alert("Gagal menyimpan data santri");
+        } finally {
+            setLoading(false);
+        }
+    };
+
     return (
         <form onSubmit={handleSubmit} className="space-y-4 mb-6">
-            {/* <input
-                type="text"
-                placeholder="NIS"
-                className="w-full border rounded-lg p-3"
-                value={form.nis}
-                onChange={(e) => update("nis", e.target.value)}
-                required
-            /> */}
 
-            <input
-                type="text"
-                placeholder="Nama Santri"
-                className="w-full border rounded-lg p-3"
-                value={form.nama}
-                onChange={(e) => update("nama", e.target.value)}
-                required
+            <div>
+                <Label>Nama Santri</Label>
+                <Input
+                    type="text"
+                    value={form.nama}
+                    onChange={(e) =>
+                        update("nama", e.target.value)
+                    }
+                />
+            </div>
+
+            <div>
+                <Label>Jenis Kelamin</Label>
+                <div className="relative">
+                    <Select
+                        options={options}
+                        defaultValue={form.jenis_kelamin}
+                        placeholder="Pilih jenis kelamin"
+                        onChange={handleSelectChange}
+                        className="dark:bg-dark-900"
+                    />
+                    <span className="absolute text-gray-500 -translate-y-1/2 pointer-events-none right-3 top-1/2 dark:text-gray-400">
+                        <ChevronDownIcon />
+                    </span>
+                </div>
+            </div>
+
+
+            <DatePicker
+                id="tanggal-lahir"
+                label="Tanggal Lahir"
+                placeholder="Pilih tanggal lahir"
+                defaultDate={form.tanggal_lahir}
+                onChange={(_, currentDateString) => {
+                    // Simpan tanggal lahir
+                    update("tanggal_lahir", currentDateString);
+
+                    // Hitung tanggal masuk = tanggal lahir + 3 tahun
+                    const birthDate = new Date(currentDateString);
+
+                    if (!isNaN(birthDate.getTime())) {
+                        birthDate.setFullYear(birthDate.getFullYear() + 3);
+
+                        const tanggalMasuk = birthDate.toISOString().split("T")[0];
+
+                        update("tanggal_masuk", tanggalMasuk);
+                    }
+                }}
             />
 
-            <select
-                className="w-full border rounded-lg p-3"
-                value={form.jenis_kelamin}
-                onChange={(e) =>
-                    update("jenis_kelamin", e.target.value)
-                }
-            >
-                <option value="L">Laki-laki</option>
-                <option value="P">Perempuan</option>
-            </select>
+            <div>
+                <Label>Nama Wali</Label>
+                <Input
+                    type="text"
+                    value={form.nama_wali}
+                    onChange={(e) => update("nama_wali", e.target.value)}
+                />
+            </div>
 
-            <input
-                type="date"
-                className="w-full border rounded-lg p-3"
-                value={form.tanggal_lahir}
-                onChange={(e) =>
-                    update("tanggal_lahir", e.target.value)
-                }
-            />
+            <div>
+                <Label>Kontak Wali</Label>
+                <Input
+                    type="number"
+                    value={form.kontak_wali}
+                    placeholder="08123456789"
+                    onChange={(e) => update("kontak_wali", e.target.value)}
+                />
+            </div>
 
-            <input
-                type="text"
-                placeholder="Nama Wali"
-                className="w-full border rounded-lg p-3"
-                value={form.nama_wali}
-                onChange={(e) => update("nama", e.target.value)}
-                required
-            />
-
-            <input
-                type="text"
-                placeholder="Kontak Wali"
-                className="w-full border rounded-lg p-3"
-                value={form.kontak_wali}
-                onChange={(e) => update("nama", e.target.value)}
-                required
-            />
-
-            <textarea
-                placeholder="Alamat"
-                className="w-full border rounded-lg p-3"
-                value={form.alamat}
-                onChange={(e) => update("alamat", e.target.value)}
-            />
+            <div>
+                <Label>Alamat</Label>
+                <TextArea
+                    value={form.alamat}
+                    onChange={(value) => update("alamat", value)}
+                    rows={6}
+                />
+            </div>
 
             <button
                 type="submit"

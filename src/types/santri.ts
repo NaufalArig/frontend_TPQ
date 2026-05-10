@@ -1,10 +1,16 @@
-export type Santri = {
-    id: number;
+export type SantriFormData = {
     nama: string;
-    nis: string;
     jenis_kelamin: "L" | "P";
     tanggal_lahir: string;
     alamat: string;
     nama_wali: string;
     kontak_wali: string;
+    tanggal_masuk: string;
+    status: "pending" | "aktif" | "lulus" | "keluar";
+};
+
+export type Santri = SantriFormData & {
+    id: number;
+    created_at?: string;
+    updated_at?: string;
 };
