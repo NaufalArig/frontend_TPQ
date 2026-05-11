@@ -62,6 +62,8 @@ const AppSidebar: React.FC = () => {
         return [];
     }
   };
+  console.log("ROLE:", user?.role);
+  console.log("MENU:", getMenuByRole());
 
   const menuItems = getMenuByRole();
 

@@ -1,11 +1,27 @@
-import RoleGuard from "@/components/RoleGuard";
+"use client";
 
-export default function GuruPage() {
+import ComponentCard from "@/components/common/ComponentCard";
+import PageBreadcrumb from "@/components/common/PageBreadCrumb";
+import GuruTable from "./components/GuruTable";
+import Link from "next/link";
+
+export default function SantriPage() {
+
   return (
-    <RoleGuard allow={["admin"]}>
-      <div>
-        <h1 className="text-xl font-bold">Data Guru</h1>
+    <div>
+      <PageBreadcrumb pageTitle="Menu Guru" />
+      <div className="space-y-6">
+        <div className="flex justify-between items-center mb-6">
+          <Link
+            href="/guru/create"
+            className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600"
+          >Tambah Guru
+          </Link>
+        </div>
+        <ComponentCard title="Daftar Tabel Guru">
+          <GuruTable />
+        </ComponentCard>
       </div>
-    </RoleGuard>
+    </div>
   );
 }

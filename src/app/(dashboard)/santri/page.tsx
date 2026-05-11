@@ -9,7 +9,7 @@ export default function SantriPage() {
 
   return (
     <div>
-      <PageBreadcrumb pageTitle="Data Santri" />
+      <PageBreadcrumb pageTitle="Menu Santri" />
       <div className="space-y-6">
         <div className="flex justify-between items-center mb-6">
           <Link
@@ -18,7 +18,7 @@ export default function SantriPage() {
           >Tambah Santri
           </Link>
         </div>
-        <ComponentCard title="Data Tabel 1">
+        <ComponentCard title="Daftar Tabel Santri">
           <SantriTable />
         </ComponentCard>
       </div>

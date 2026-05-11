@@ -2,11 +2,11 @@
 
 import { useState } from "react";
 import { createSantri } from "@/services/santri";
-import Label from "@/components/form/santri/Label";
-import Input from "@/components/form/santri/InputField";
-import Select from "@/components/form/santri/Select";
-import DatePicker from "@/components/form/santri/date-picker";
-import TextArea from "@/components/form/santri/TextArea";
+import Label from "@/components/form/Label";
+import Input from "@/components/form/InputField";
+import Select from "@/components/form/Select";
+import DatePicker from "@/components/form/date-picker";
+import TextArea from "@/components/form/TextArea";
 import { ChevronDownIcon } from "@/icons";
 import { useRouter } from "next/navigation";
 import { Santri, SantriFormData } from "@/types/santri";
@@ -102,17 +102,14 @@ export default function SantriForm({
                 </div>
             </div>
 
-
             <DatePicker
                 id="tanggal-lahir"
                 label="Tanggal Lahir"
                 placeholder="Pilih tanggal lahir"
                 defaultDate={form.tanggal_lahir}
                 onChange={(_, currentDateString) => {
-                    // Simpan tanggal lahir
                     update("tanggal_lahir", currentDateString);
 
-                    // Hitung tanggal masuk = tanggal lahir + 3 tahun
                     const birthDate = new Date(currentDateString);
 
                     if (!isNaN(birthDate.getTime())) {
