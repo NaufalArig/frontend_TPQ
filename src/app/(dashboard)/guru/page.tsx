@@ -5,7 +5,7 @@ import PageBreadcrumb from "@/components/common/PageBreadCrumb";
 import GuruTable from "./components/GuruTable";
 import Link from "next/link";
 
-export default function SantriPage() {
+export default function GuruPage() {
 
   return (
     <div>

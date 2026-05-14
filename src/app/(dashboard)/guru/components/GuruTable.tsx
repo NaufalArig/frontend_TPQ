@@ -10,7 +10,7 @@ import {
 import { useEffect, useState } from "react";
 import { getGuru, deleteGuru } from "@/services/guru";
 import { Guru } from "@/types/guru";
-import Link from "next/link";
+import router from "next/router";
 
 export default function GuruTable() {
     const [data, setData] = useState<Guru[]>([]);
@@ -131,12 +131,12 @@ export default function GuruTable() {
                                         {guru.status}
                                     </TableCell>
                                     <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
-                                        <Link
-                                            href={`/guru/edit/${guru.id}`}
-                                            className="text-blue-500 hover:underline"
+                                        <button
+                                            onClick={() => router.push(`/guru/edit/${guru.id}`)}
+                                            className="text-blue-500 hover:underline text-sm"
                                         >
                                             Edit
-                                        </Link>
+                                        </button>
                                         <span className="m-1 font-semibold text-gray-500">|</span>
                                         <button
                                             onClick={() => handleDelete(guru.id)}

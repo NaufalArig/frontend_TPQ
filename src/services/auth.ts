@@ -29,13 +29,23 @@ export async function login(email: string, password: string) {
 }
 
 export async function logout() {
-    try {
-        await api.post("/logout");
-    } catch (err) {
-        console.log(err);
+    const token = Cookies.get("token");
+
+    const res = await fetch(`${API_URL}/logout`, {
+        method: "POST",
+        headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: "application/json",
+        },
+    });
+
+    // Hapus token dan data user dari cookie
+    Cookies.remove("token");
+    Cookies.remove("user");
+
+    if (!res.ok) {
+        throw new Error("Gagal logout");
     }
 
-    Cookies.remove("token");
-
-    window.location.href = "/login";
+    return res.json();
 }
