@@ -24,7 +24,7 @@ export default function SantriForm({
 
     const [form, setForm] = useState<SantriFormData>({
         nama: initialData?.nama || "",
-        jenis_kelamin: initialData?.jenis_kelamin || "L",
+        jenis_kelamin: initialData?.jenis_kelamin || "",
         tanggal_lahir: initialData?.tanggal_lahir || "",
         nama_wali: initialData?.nama_wali || "",
         kontak_wali: initialData?.kontak_wali || "",
@@ -149,7 +149,21 @@ export default function SantriForm({
                     rows={6}
                 />
             </div>
-
+            {initialData && (
+                <div>
+                    <Label>Status</Label>
+                    <select
+                        value={form.status}
+                        onChange={(e) => update("status", e.target.value)}
+                        className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                        <option value="pending">pending</option>
+                        <option value="aktif">aktif</option>
+                        <option value="lulus">lulus</option>
+                        <option value="keluar">keluar</option>
+                    </select>
+                </div>
+            )}
             <button
                 type="submit"
                 disabled={loading}

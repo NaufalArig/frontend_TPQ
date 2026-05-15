@@ -36,7 +36,7 @@ export default function UserDropdown() {
 
       closeDropdown();
 
-      router.push("/login");
+      router.push("/auth/login");
     } catch (error) {
       console.error("Logout gagal:", error);
       alert("Logout gagal");

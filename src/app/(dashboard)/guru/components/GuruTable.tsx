@@ -10,11 +10,13 @@ import {
 import { useEffect, useState } from "react";
 import { getGuru, deleteGuru } from "@/services/guru";
 import { Guru } from "@/types/guru";
-import router from "next/router";
+import { useRouter } from "next/navigation";
+import router from 'next/router';
 
 export default function GuruTable() {
     const [data, setData] = useState<Guru[]>([]);
     const [loading, setLoading] = useState(true);
+    const router = useRouter();
 
     const handleDelete = async (id: number) => {
         const confirmed = confirm(

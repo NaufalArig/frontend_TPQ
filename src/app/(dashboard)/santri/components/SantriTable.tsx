@@ -10,12 +10,12 @@ import {
 import { useEffect, useState } from "react";
 import { getSantri, deleteSantri } from "@/services/santri";
 import { Santri } from "@/types/santri";
-import Link from "next/link";
-import router from "next/router";
+import { useRouter } from "next/navigation";
 
 export default function SantriTable() {
     const [data, setData] = useState<Santri[]>([]);
     const [loading, setLoading] = useState(true);
+    const router = useRouter();
 
     const handleDelete = async (id: number) => {
         const confirmed = confirm(
@@ -144,7 +144,7 @@ export default function SantriTable() {
                                     </TableCell>
                                     <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
                                         <button
-                                            onClick={() => router.push(`/keuangan/edit/${santri.id}`)}
+                                            onClick={() => router.push(`/santri/edit/${santri.id}`)}
                                             className="text-blue-500 hover:underline text-sm"
                                         >
                                             Edit

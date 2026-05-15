@@ -47,7 +47,7 @@ export async function getSantri() {
 //Function Tambah Santri
 export async function createSantri(data: {
     nama: string;
-    jenis_kelamin: "L" | "P";
+    jenis_kelamin: "L" | "P" | "";
     tanggal_lahir: string;
     nama_wali: string;
     kontak_wali: string;

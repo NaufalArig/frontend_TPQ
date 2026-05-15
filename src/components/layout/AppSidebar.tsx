@@ -94,21 +94,26 @@ const AppSidebar: React.FC = () => {
     >
       {/* LOGO */}
       <div className="p-6">
-        <Link href="/dashboard">
-          {isExpanded || isHovered || isMobileOpen ? (
-            <Image
-              src="/images/logo/logo.svg"
-              alt="logo"
-              width={120}
-              height={40}
-            />
-          ) : (
-            <Image
-              src="/images/logo/logo-icon.svg"
-              alt="logo"
-              width={40}
-              height={40}
-            />
+        <Link
+          href="/dashboard"
+          className="flex items-center gap-3"
+        >
+          <Image
+            src="/images/logo/logo-01.png"
+            alt="logo"
+            width={isExpanded || isHovered || isMobileOpen ? 50 : 40}
+            height={40}
+          />
+
+          {(isExpanded || isHovered || isMobileOpen) && (
+            <div className="flex flex-col leading-tight">
+              <span className="text-lg font-bold text-gray-800 dark:text-white">
+                TPQ
+              </span>
+              <span className="text-xs text-gray-500 dark:text-gray-400">
+                Admin Panel
+              </span>
+            </div>
           )}
         </Link>
       </div>

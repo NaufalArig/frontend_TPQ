@@ -15,7 +15,8 @@ interface InputProps {
   disabled?: boolean;
   success?: boolean;
   error?: boolean;
-  hint?: string; // Optional hint text
+  hint?: string;
+  required?: boolean;
 }
 
 const Input: FC<InputProps> = ({
@@ -64,6 +65,7 @@ const Input: FC<InputProps> = ({
         step={step}
         disabled={disabled}
         className={inputClasses}
+        required
       />
 
       {/* Optional Hint Text */}

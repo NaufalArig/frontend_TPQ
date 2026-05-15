@@ -10,7 +10,7 @@ import {
 import { useEffect, useState } from "react";
 import { getKeuangan, deleteKeuangan } from "@/services/keuangan";
 import { Keuangan, KeuanganSummary } from "@/types/keuangan";
-import router from "next/router";
+import { useRouter } from "next/navigation";
 
 function formatRupiah(value: number) {
     return new Intl.NumberFormat("id-ID", {
@@ -23,6 +23,7 @@ function formatRupiah(value: number) {
 export default function KeuanganTable() {
     const [summary, setSummary] = useState<KeuanganSummary | null>(null);
     const [loading, setLoading] = useState(true);
+    const router = useRouter();
 
     const loadData = async () => {
         const data = await getKeuangan();
@@ -46,7 +47,7 @@ export default function KeuanganTable() {
         fetchData();
     }, []);
 
-    if (loading) return <p>Loading data guru...</p>;
+    if (loading) return <p>Loading data keuangan...</p>;
 
     if (loading) return <p>Loading...</p>;
 

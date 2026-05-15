@@ -1,6 +1,6 @@
 export type SantriFormData = {
     nama: string;
-    jenis_kelamin: "L" | "P";
+    jenis_kelamin: "L" | "P" | "";
     tanggal_lahir: string;
     alamat: string;
     nama_wali: string;
