@@ -6,13 +6,13 @@ export function middleware(req: NextRequest) {
     const { pathname } = req.nextUrl;
 
     // boleh akses login
-    if (pathname.startsWith("/login")) {
+    if (pathname.startsWith("/auth/login")) {
         return NextResponse.next();
     }
 
     // tidak ada token
     if (!token) {
-        return NextResponse.redirect(new URL("/login", req.url));
+        return NextResponse.redirect(new URL("/auth/login", req.url));
     }
 
     return NextResponse.next();

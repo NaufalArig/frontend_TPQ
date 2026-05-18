@@ -31,11 +31,9 @@ export default function DashboardPage() {
   }, []);
 
   if (!stats) return <div className="p-6">Loading...</div>;
-  console.log(stats.chart_keuangan);
 
   return (
     <div className="space-y-6">
-
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 md:gap-6">
         <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] md:p-6">
           <div className="flex items-center justify-center w-12 h-12 bg-blue-100 rounded-xl">
@@ -105,7 +103,7 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-        <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]">
+        <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/3">
           <div className="flex items-center justify-between mb-4">
             <h5 className="font-semibold text-gray-800 dark:text-white">Santri Perlu Diaktifkan</h5>
             <button onClick={() => router.push("/santri")} className="text-xs text-blue-500 hover:underline">

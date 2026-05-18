@@ -14,7 +14,7 @@ export default function GuruPage() {
         <div className="flex justify-between items-center mb-6">
           <Link
             href="/guru/create"
-            className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600"
+            className="bg-brand-600 text-white px-4 py-2 rounded-lg hover:bg-blue-600"
           >Tambah Guru
           </Link>
         </div>

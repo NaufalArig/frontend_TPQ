@@ -69,20 +69,14 @@ const AppSidebar: React.FC = () => {
 
   return (
     <aside
-      className={`
-    fixed top-0 left-0 z-50 h-screen bg-white border-r
-    transition-all duration-300
-
-    ${isExpanded || isHovered || isMobileOpen
-          ? "w-[290px]"
-          : "w-[90px]"
-        }
-
-    ${isMobileOpen
+      className={`fixed top-0 left-0 z-50 h-screen bg-brand-100 border-r transition-all duration-300 ${isExpanded || isHovered || isMobileOpen
+        ? "w-[290px]"
+        : "w-[90px]"
+        } ${isMobileOpen
           ? "translate-x-0"
           : "-translate-x-full lg:translate-x-0"
-        }
-  `}
+        }`
+      }
       onMouseEnter={() => {
         if (!isExpanded) {
           setIsHovered(true);
@@ -93,9 +87,8 @@ const AppSidebar: React.FC = () => {
       }}
     >
       {/* LOGO */}
-      <div className="p-6">
-        <Link
-          href="/dashboard"
+      <div className="p-4">
+        <div
           className="flex items-center gap-3"
         >
           <Image
@@ -115,13 +108,13 @@ const AppSidebar: React.FC = () => {
               </span>
             </div>
           )}
-        </Link>
+        </div>
       </div>
-
+      <hr className="border-white border" />
       {/* MENU */}
-      <nav className="px-4">
+      <nav className="px-4 mt-5">
         {(isExpanded || isHovered || isMobileOpen) && (
-          <h2 className="text-xs text-gray-400 mb-4">
+          <h2 className="text-xs text-black mb-4 mt-2">
             Menu
           </h2>
         )}
@@ -135,7 +128,7 @@ const AppSidebar: React.FC = () => {
                     ? "justify-center"
                     : "gap-3"}
                   ${isActive(item.path)
-                    ? "bg-blue-500 text-white"
+                    ? "bg-brand-500 text-white"
                     : "text-gray-700 hover:bg-gray-100"}
                     `}
               >
@@ -149,11 +142,6 @@ const AppSidebar: React.FC = () => {
           ))}
         </ul>
       </nav>
-
-      {/* WIDGET */}
-      {/* <div className="mt-auto p-4">
-        <SidebarWidget />
-      </div> */}
     </aside>
   );
 };

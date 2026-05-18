@@ -7,6 +7,8 @@ import ComponentCard from "@/components/common/ComponentCard";
 import SantriForm from "../../components/SantriForm";
 import { getSantriById, updateSantri } from "@/services/santri";
 import { Santri, SantriFormData } from "@/types/santri";
+import Toast from "@/components/ui/toast/Toast";
+import { useToast } from "@/hooks/useToast";
 
 type Props = {
     params: Promise<{
@@ -17,6 +19,7 @@ type Props = {
 export default function EditSantriPage({ params }: Props) {
     const [santri, setSantri] = useState<Santri | null>(null);
     const [loading, setLoading] = useState(true);
+    const { toast, showToast, hideToast } = useToast();
     const router = useRouter();
 
     useEffect(() => {
@@ -33,22 +36,48 @@ export default function EditSantriPage({ params }: Props) {
     const handleSubmit = async (data: SantriFormData) => {
         if (!santri) return;
 
-        await updateSantri(santri.id, data);
-        router.push("/santri");
+        if (data.jenis_kelamin === "") {
+            alert("Jenis kelamin wajib dipilih");
+            return;
+        }
+
+        await updateSantri(santri.id, {
+            nama: data.nama,
+            jenis_kelamin: data.jenis_kelamin,
+            tanggal_lahir: data.tanggal_lahir,
+            nama_wali: data.nama_wali,
+            kontak_wali: data.kontak_wali,
+            alamat: data.alamat,
+        });
+    };
+
+    const handleSuccess = (message: string) => {
+        showToast(message, "success");
+        setTimeout(() => router.push("/santri"), 1500);
     };
 
     if (loading) return <p>Loading...</p>;
     if (!santri) return <p>Data tidak ditemukan</p>;
 
     return (
-        <div>
-            <PageBreadcrumb pageTitle="Edit Santri" />
-            <ComponentCard title="Form Edit Santri">
-                <SantriForm
-                    initialData={santri}
-                    onSubmit={handleSubmit}
+        <>
+            {toast.show && (
+                <Toast
+                    message={toast.message}
+                    type={toast.type}
+                    onClose={hideToast}
                 />
-            </ComponentCard>
-        </div>
+            )}
+            <div>
+                <PageBreadcrumb pageTitle="Edit Santri" />
+                <ComponentCard title="Form Edit Santri">
+                    <SantriForm
+                        initialData={santri}
+                        onSubmit={handleSubmit}
+                        onSuccess={handleSuccess}
+                    />
+                </ComponentCard>
+            </div>
+        </>
     );
 }
