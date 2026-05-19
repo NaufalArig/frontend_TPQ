@@ -114,7 +114,6 @@ export default function LoginPage() {
                                         type="text"
                                         value={name}
                                         onChange={(e) => setName(e.target.value)}
-                                        required
                                     />
                                 </div>
                                 <div>
@@ -125,7 +124,6 @@ export default function LoginPage() {
                                             placeholder="Ketik kata sandimu"
                                             value={password}
                                             onChange={(e) => setPassword(e.target.value)}
-                                            required
                                         />
                                         <span
                                             onClick={() => setShowPassword(!showPassword)}

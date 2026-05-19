@@ -48,6 +48,7 @@ export default function EditSantriPage({ params }: Props) {
             nama_wali: data.nama_wali,
             kontak_wali: data.kontak_wali,
             alamat: data.alamat,
+            status: data.status,
         });
     };
 

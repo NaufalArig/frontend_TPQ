@@ -11,7 +11,7 @@ type Props = {
     duration?: number;
 };
 
-export default function Toast({ message, type = "success", onClose, duration = 1000 }: Props) {
+export default function Toast({ message, type = "success", onClose, duration = 1500 }: Props) {
     useEffect(() => {
         const timer = setTimeout(onClose, duration);
         return () => clearTimeout(timer);

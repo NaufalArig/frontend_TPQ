@@ -54,21 +54,56 @@ export default function SantriForm({ initialData, onSubmit, onSuccess }: Props) 
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        if (!form.nama.trim()) {
+            showToast("Nama santri wajib diisi", "error");
+            return;
+        }
+
+        if (!form.jenis_kelamin) {
+            showToast("Jenis kelamin wajib dipilih", "error");
+            return;
+        }
+
+        if (!form.tanggal_lahir) {
+            showToast("Tanggal lahir wajib diisi", "error");
+            return;
+        }
+
+        if (!form.nama_wali.trim()) {
+            showToast("Nama wali wajib diisi", "error");
+            return;
+        }
+
+        if (!form.kontak_wali.trim()) {
+            showToast("Kontak wali wajib diisi", "error");
+            return;
+        }
+
+        if (!form.alamat.trim()) {
+            showToast("Alamat wajib diisi", "error");
+            return;
+        }
+
         try {
             setLoading(true);
+
             if (onSubmit) {
-                // Mode edit — serahkan semua ke parent
                 await onSubmit(form);
+
                 onSuccess?.(
                     initialData
                         ? `Data ${form.nama} berhasil diperbarui!`
                         : `Santri ${form.nama} berhasil ditambahkan!`
                 );
-                // Jangan redirect di sini, biar parent yang handle
             } else {
-                // Mode tambah — handle sendiri
                 await createSantri(form);
-                showToast(`Santri ${form.nama} berhasil ditambahkan!`, "success");
+
+                showToast(
+                    `Santri ${form.nama} berhasil ditambahkan!`,
+                    "success"
+                );
+
                 setTimeout(() => router.push("/santri"), 1500);
             }
         } catch (error) {
@@ -89,7 +124,6 @@ export default function SantriForm({ initialData, onSubmit, onSuccess }: Props) 
                         value={form.nama}
                         placeholder="Masukkan nama santri"
                         onChange={(e) => update("nama", e.target.value)}
-                        required
                     />
                 </div>
 
@@ -131,7 +165,6 @@ export default function SantriForm({ initialData, onSubmit, onSuccess }: Props) 
                         value={form.nama_wali}
                         placeholder="Masukkan nama wali"
                         onChange={(e) => update("nama_wali", e.target.value)}
-                        required
                     />
                 </div>
 
@@ -142,7 +175,6 @@ export default function SantriForm({ initialData, onSubmit, onSuccess }: Props) 
                         value={form.kontak_wali}
                         placeholder="08123456789"
                         onChange={(e) => update("kontak_wali", e.target.value)}
-                        required
                     />
                 </div>
 

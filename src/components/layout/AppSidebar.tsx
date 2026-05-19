@@ -11,7 +11,9 @@ import {
   GridIcon,
   ListIcon,
   UserCircleIcon,
+  UserIcon,
 } from "@/icons";
+import SidebarWidget from "./SidebarWidget";
 
 type NavItem = {
   name: string;
@@ -44,6 +46,7 @@ const AppSidebar: React.FC = () => {
           { icon: <UserCircleIcon />, name: "Santri", path: "/santri" },
           { icon: <ListIcon />, name: "Guru", path: "/guru" },
           { icon: <BoxCubeIcon />, name: "Keuangan", path: "/keuangan" },
+          { icon: <UserIcon/>, name: "User", path: "/users"}
         ];
 
       case "guru":
@@ -69,9 +72,9 @@ const AppSidebar: React.FC = () => {
 
   return (
     <aside
-      className={`fixed top-0 left-0 z-50 h-screen bg-brand-100 border-r transition-all duration-300 ${isExpanded || isHovered || isMobileOpen
-        ? "w-[290px]"
-        : "w-[90px]"
+      className={`fixed top-0 left-0 z-50 h-screen bg-brand-200 border-r border-brand-300 transition-all duration-300 ${isExpanded || isHovered || isMobileOpen
+        ? "w-72.5"
+        : "w-22.5"
         } ${isMobileOpen
           ? "translate-x-0"
           : "-translate-x-full lg:translate-x-0"
@@ -100,17 +103,17 @@ const AppSidebar: React.FC = () => {
 
           {(isExpanded || isHovered || isMobileOpen) && (
             <div className="flex flex-col leading-tight">
-              <span className="text-lg font-bold text-gray-800 dark:text-white">
+              <span className="text-lg font-bold text-gray-800">
                 TPQ
               </span>
-              <span className="text-xs text-gray-500 dark:text-gray-400">
+              <span className="text-xs text-gray-700">
                 Admin Panel
               </span>
             </div>
           )}
         </div>
       </div>
-      <hr className="border-white border" />
+      <hr className="border-brand-300 border" />
       {/* MENU */}
       <nav className="px-4 mt-5">
         {(isExpanded || isHovered || isMobileOpen) && (
@@ -129,7 +132,7 @@ const AppSidebar: React.FC = () => {
                     : "gap-3"}
                   ${isActive(item.path)
                     ? "bg-brand-500 text-white"
-                    : "text-gray-700 hover:bg-gray-100"}
+                    : "text-gray-700 hover:bg-gray-200"}
                     `}
               >
                 {item.icon}
@@ -142,6 +145,7 @@ const AppSidebar: React.FC = () => {
           ))}
         </ul>
       </nav>
+      <SidebarWidget/>
     </aside>
   );
 };

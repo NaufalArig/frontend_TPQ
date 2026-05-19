@@ -88,6 +88,7 @@ export async function updateSantri(
         nama_wali: string;
         kontak_wali: string;
         alamat: string;
+        status: string;
     }
 ) {
     const token = getToken();

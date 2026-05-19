@@ -7,6 +7,8 @@ import ComponentCard from "@/components/common/ComponentCard";
 import GuruForm from "../../components/GuruForm";
 import { getGuruById, updateGuru } from "@/services/guru";
 import { Guru, GuruFormData } from "@/types/guru";
+import Toast from "@/components/ui/toast/Toast";
+import { useToast } from "@/hooks/useToast";
 
 type Props = {
     params: Promise<{
@@ -17,6 +19,7 @@ type Props = {
 export default function EditGuruPage({ params }: Props) {
     const [guru, setGuru] = useState<Guru | null>(null);
     const [loading, setLoading] = useState(true);
+    const { toast, showToast, hideToast } = useToast();
     const router = useRouter();
 
     useEffect(() => {
@@ -37,21 +40,35 @@ export default function EditGuruPage({ params }: Props) {
         console.log("data yang dikirim:", data);
 
         await updateGuru(guru.id, data);
-        router.push("/guru");
+    };
+
+    const handleSuccess = (message: string) => {
+        showToast(message, "success");
+        setTimeout(() => router.push("/guru"), 1500);
     };
 
     if (loading) return <p>Loading...</p>;
     if (!guru) return <p>Data tidak ditemukan</p>;
 
     return (
-        <div>
-            <PageBreadcrumb pageTitle="Edit Guru" />
-            <ComponentCard title="Form Edit Guru">
-                <GuruForm
-                    initialData={guru}
-                    onSubmit={handleSubmit}
+        <>
+            {toast.show && (
+                <Toast
+                    message={toast.message}
+                    type={toast.type}
+                    onClose={hideToast}
                 />
-            </ComponentCard>
-        </div>
+            )}
+            <div>
+                <PageBreadcrumb pageTitle="Edit Guru" />
+                <ComponentCard title="Form Edit Guru">
+                    <GuruForm
+                        initialData={guru}
+                        onSubmit={handleSubmit}
+                        onSuccess={handleSuccess}
+                    />
+                </ComponentCard>
+            </div>
+        </>
     );
 }
