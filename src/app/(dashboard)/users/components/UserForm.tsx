@@ -86,7 +86,7 @@ export default function UserForm({ initialData, onSubmit, onSuccess }: Props) {
     return (
         <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-                <Label>Nama</Label>
+                <Label>Nama User</Label>
                 <Input
                     type="text"
                     value={form.name}
@@ -131,13 +131,22 @@ export default function UserForm({ initialData, onSubmit, onSuccess }: Props) {
                 </select>
             </div>
 
-            <button
-                type="submit"
-                disabled={loading}
-                className="rounded-lg bg-brand-500 px-6 py-2.5 text-sm font-medium text-white hover:bg-brand-600 disabled:opacity-70"
-            >
-                {loading ? "Menyimpan..." : "Simpan"}
-            </button>
+            <div className="flex gap-3 pt-2">
+                <button
+                    type="submit"
+                    disabled={loading}
+                    className="bg-brand-500 hover:bg-brand-600 text-white px-6 py-2.5 rounded-lg text-sm font-medium transition-colors disabled:opacity-70"
+                >
+                    {loading ? "Menyimpan..." : "Simpan"}
+                </button>
+                <button
+                    type="button"
+                    onClick={() => router.push("/users")}
+                    className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 py-2.5 rounded-lg text-sm font-medium transition-colors"
+                >
+                    Batal
+                </button>
+            </div>
             {toast.show && (
                 <Toast
                     message={toast.message}

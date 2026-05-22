@@ -11,10 +11,21 @@ import { useEffect, useState } from "react";
 import { getUsers, deleteUser } from "@/services/user";
 import { User } from "@/types/user";
 import { useRouter } from "next/navigation";
+import Toast from "@/components/ui/toast/Toast";
+import { useToast } from "@/hooks/useToast";
 
-export default function UsersTable() {
+type Props = {
+    search: string;
+    roleFilter: string;
+};
+
+export default function UserTable({
+    search,
+    roleFilter,
+}: Props) {
     const [users, setUsers] = useState<User[]>([]);
     const [loading, setLoading] = useState(true);
+    const { toast, showToast, hideToast } = useToast();
     const [deleteModal, setDeleteModal] = useState<{ show: boolean; id: number | null; nama: string }>({
         show: false,
         id: null,
@@ -38,15 +49,47 @@ export default function UsersTable() {
 
     const handleDeleteConfirm = async () => {
         if (!deleteModal.id) return;
+
         try {
             await deleteUser(deleteModal.id);
-            setUsers((prev) => prev.filter((item) => item.id !== deleteModal.id));
-            setDeleteModal({ show: false, id: null, nama: "" });
+
+            setUsers((prev) =>
+                prev.filter((item) => item.id !== deleteModal.id)
+            );
+
+            showToast(
+                `Data guru ${deleteModal.nama} berhasil dihapus!`,
+                "success"
+            );
+
+            setDeleteModal({
+                show: false,
+                id: null,
+                nama: "",
+            });
+
         } catch (error) {
             console.error(error);
-            alert("Gagal menghapus data");
+
+            showToast(
+                "Gagal menghapus data guru",
+                "error"
+            );
         }
     };
+
+    const filteredData = users.filter((user) => {
+        const keyword = search.toLowerCase();
+
+        const matchSearch =
+            user.name.toLowerCase().includes(keyword) ||
+            user.email.toLowerCase().includes(keyword);
+
+        const matchRole =
+            roleFilter === "" || user.role === roleFilter;
+
+        return matchSearch && matchRole;
+    });
 
     useEffect(() => {
         async function fetchUsers() {
@@ -114,7 +157,7 @@ export default function UsersTable() {
                 <div className="max-w-full overflow-x-auto">
                     <div className="min-w-275.5">
                         <Table>
-                            <TableHeader className="border-b border-gray-100 dark:border-white/5">
+                            <TableHeader className="border-b border-brand-300 bg-brand-100">
                                 <TableRow>
                                     {["No", "Nama User", "Email", "Role", "Aksi"].map((h) => (
                                         <TableCell key={h} isHeader className="px-4 py-3 font-semibold text-black text-start text-theme-xs dark:text-gray-400">
@@ -125,7 +168,7 @@ export default function UsersTable() {
                             </TableHeader>
 
                             <TableBody className="divide-y divide-gray-100 dark:divide-white/5">
-                                {users.map((user, index) => (
+                                {filteredData.map((user, index) => (
                                     <TableRow key={user.id}>
                                         <TableCell className="px-4 py-3 text-gray-500 text-theme-sm dark:text-gray-400">{index + 1}</TableCell>
                                         <TableCell className="px-4 py-3 text-gray-500 text-theme-sm dark:text-gray-400">{user.name}</TableCell>
@@ -153,6 +196,13 @@ export default function UsersTable() {
                     </div>
                 </div>
             </div>
+            {toast.show && (
+                <Toast
+                    message={toast.message}
+                    type={toast.type}
+                    onClose={hideToast}
+                />
+            )}
         </>
     );
 }

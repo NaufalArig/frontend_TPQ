@@ -9,6 +9,8 @@ import Button from "@/components/ui/button/Button";
 import { EyeCloseIcon, EyeIcon } from "@/icons";
 import Link from "next/link";
 import React, { useState } from "react";
+import Toast from "@/components/ui/toast/Toast";
+import { useToast } from "@/hooks/useToast";
 
 export default function LoginPage() {
     const [showPassword, setShowPassword] = useState(false);
@@ -17,9 +19,21 @@ export default function LoginPage() {
     const [password, setPassword] = useState("");
     const [loading, setLoading] = useState(false);
     const [showSuccess, setShowSuccess] = useState(false);
+    const { toast, showToast, hideToast } = useToast();
 
     const handleLogin = async (e: React.SyntheticEvent<HTMLFormElement>) => {
         e.preventDefault();
+
+        if (!name.trim()) {
+            showToast("Nama user wajib diisi", "error");
+            return;
+        }
+
+        if (!password.trim()) {
+            showToast("Kata sandi wajib diisi", "error");
+            return;
+        }
+
         setLoading(true);
 
         try {
@@ -37,9 +51,9 @@ export default function LoginPage() {
 
         } catch (err: unknown) {
             if (err instanceof Error) {
-                alert(err.message);
+                showToast(err.message, "error");
             } else {
-                alert("Terjadi error");
+                showToast("Nama user atau password salah", "error");
             }
         } finally {
             setLoading(false);
@@ -166,6 +180,13 @@ export default function LoginPage() {
                     </div>
                 </div>
             </div>
+            {toast.show && (
+                <Toast
+                    message={toast.message}
+                    type={toast.type}
+                    onClose={hideToast}
+                />
+            )}
         </>
     );
 }

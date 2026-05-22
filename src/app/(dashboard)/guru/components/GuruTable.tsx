@@ -11,10 +11,21 @@ import { useEffect, useState } from "react";
 import { getGuru, deleteGuru } from "@/services/guru";
 import { Guru } from "@/types/guru";
 import { useRouter } from "next/navigation";
+import Toast from "@/components/ui/toast/Toast";
+import { useToast } from "@/hooks/useToast";
 
-export default function GuruTable() {
+type Props = {
+    search: string;
+    statusFilter: string;
+};
+
+export default function GuruTable({
+    search,
+    statusFilter,
+}: Props) {
     const [data, setData] = useState<Guru[]>([]);
     const [loading, setLoading] = useState(true);
+    const { toast, showToast, hideToast } = useToast();
     const [deleteModal, setDeleteModal] = useState<{ show: boolean; id: number | null; nama: string }>({
         show: false,
         id: null,
@@ -28,15 +39,49 @@ export default function GuruTable() {
 
     const handleDeleteConfirm = async () => {
         if (!deleteModal.id) return;
+
         try {
             await deleteGuru(deleteModal.id);
-            setData((prev) => prev.filter((item) => item.id !== deleteModal.id));
-            setDeleteModal({ show: false, id: null, nama: "" });
+
+            setData((prev) =>
+                prev.filter((item) => item.id !== deleteModal.id)
+            );
+
+            showToast(
+                `Data guru ${deleteModal.nama} berhasil dihapus!`,
+                "success"
+            );
+
+            setDeleteModal({
+                show: false,
+                id: null,
+                nama: "",
+            });
+
         } catch (error) {
             console.error(error);
-            alert("Gagal menghapus data");
+
+            showToast(
+                "Gagal menghapus data guru",
+                "error"
+            );
         }
     };
+
+
+    const filteredData = data.filter((guru) => {
+        const keyword = search.toLowerCase();
+
+        const matchSearch =
+            guru.nama.toLowerCase().includes(keyword) ||
+            guru.kontak.toLowerCase().includes(keyword) ||
+            guru.alamat.toLowerCase().includes(keyword);
+
+        const matchStatus =
+            statusFilter === "" || guru.status === statusFilter;
+
+        return matchSearch && matchStatus;
+    });
 
     useEffect(() => {
         getGuru()
@@ -96,7 +141,7 @@ export default function GuruTable() {
                 <div className="max-w-full overflow-x-auto">
                     <div className="min-w-275.5">
                         <Table>
-                            <TableHeader className="border-b border-gray-100 dark:border-white/5">
+                            <TableHeader className="border-b border-brand-300 bg-brand-100">
                                 <TableRow>
                                     {["No", "Nama Guru", "Nomor", "Alamat", "Tanggal Masuk", "Tanggal Keluar", "Status", "Aksi"].map((h) => (
                                         <TableCell key={h} isHeader className="px-4 py-3 font-semibold text-black text-start text-theme-xs dark:text-gray-400">
@@ -107,7 +152,7 @@ export default function GuruTable() {
                             </TableHeader>
 
                             <TableBody className="divide-y divide-gray-100 dark:divide-white/5">
-                                {data.map((guru, index) => (
+                                {filteredData.map((guru, index) => (
                                     <TableRow key={guru.id}>
                                         <TableCell className="px-4 py-3 text-gray-500 text-theme-sm dark:text-gray-400">{index + 1}</TableCell>
                                         <TableCell className="px-4 py-3 text-gray-500 text-theme-sm dark:text-gray-400">{guru.nama}</TableCell>
@@ -119,8 +164,8 @@ export default function GuruTable() {
                                         </TableCell>
                                         <TableCell className="px-4 py-3 text-theme-sm capitalize">
                                             <span className={`px-2 py-1 rounded-full text-xs font-medium ${guru.status === "aktif"
-                                                    ? "bg-green-100 text-green-700"
-                                                    : "bg-red-100 text-red-700"
+                                                ? "bg-green-100 text-green-700"
+                                                : "bg-red-100 text-red-700"
                                                 }`}>
                                                 {guru.status}
                                             </span>
@@ -147,6 +192,13 @@ export default function GuruTable() {
                     </div>
                 </div>
             </div>
+            {toast.show && (
+                <Toast
+                    message={toast.message}
+                    type={toast.type}
+                    onClose={hideToast}
+                />
+            )}
         </>
     );
 }

@@ -11,6 +11,8 @@ import { useEffect, useState } from "react";
 import { getKeuangan, deleteKeuangan } from "@/services/keuangan";
 import { Keuangan, KeuanganSummary } from "@/types/keuangan";
 import { useRouter } from "next/navigation";
+import Toast from "@/components/ui/toast/Toast";
+import { useToast } from "@/hooks/useToast";
 
 function formatRupiah(value: number) {
     return new Intl.NumberFormat("id-ID", {
@@ -20,9 +22,18 @@ function formatRupiah(value: number) {
     }).format(value);
 }
 
-export default function KeuanganTable() {
+type Props = {
+    search: string;
+    jenisFilter: string;
+};
+
+export default function KeuanganTable({
+    search,
+    jenisFilter,
+}: Props) {
     const [summary, setSummary] = useState<KeuanganSummary | null>(null);
     const [loading, setLoading] = useState(true);
+    const { toast, showToast, hideToast } = useToast();
     const [deleteModal, setDeleteModal] = useState<{
         show: boolean;
         id: number | null;
@@ -52,15 +63,44 @@ export default function KeuanganTable() {
 
     const handleDeleteConfirm = async () => {
         if (!deleteModal.id) return;
+
         try {
             await deleteKeuangan(deleteModal.id);
-            setDeleteModal({ show: false, id: null, keterangan: "" });
+
             loadData();
+
+            showToast(
+                `Data keuangan ${deleteModal.keterangan} berhasil dihapus!`,
+                "success"
+            );
+
+            setDeleteModal({
+                show: false,
+                id: null,
+                keterangan: "",
+            });
+
         } catch (error) {
             console.error(error);
-            alert("Gagal menghapus transaksi");
+
+            showToast(
+                "Gagal menghapus data guru",
+                "error"
+            );
         }
     };
+
+    const filteredData = (summary?.data ?? []).filter((item) => {
+        const keyword = search.toLowerCase();
+
+        const matchSearch =
+            item.keterangan.toLowerCase().includes(keyword);
+
+        const matchJenis =
+            jenisFilter === "" || item.jenis === jenisFilter;
+
+        return matchSearch && matchJenis;
+    });
 
     if (loading) return <p>Loading data keuangan...</p>;
 
@@ -138,7 +178,7 @@ export default function KeuanganTable() {
                         </div>
 
                         <Table>
-                            <TableHeader className="border-b border-gray-100 dark:border-white/5">
+                            <TableHeader className="border-b border-brand-300 bg-brand-100">
                                 <TableRow>
                                     {["Tanggal", "Jenis", "Keterangan", "Nominal", "Dibuat Oleh", "Aksi"].map((h) => (
                                         <TableCell key={h} isHeader className="px-4 py-3 font-semibold text-black text-start text-theme-xs dark:text-gray-400">
@@ -149,7 +189,7 @@ export default function KeuanganTable() {
                             </TableHeader>
 
                             <TableBody className="divide-y divide-gray-100 dark:divide-white/5">
-                                {summary?.data.map((item: Keuangan) => (
+                                {filteredData.map((item: Keuangan) => (
                                     <TableRow key={item.id}>
                                         <TableCell className="px-4 py-3 text-gray-500 text-theme-sm dark:text-gray-400">
                                             {new Date(item.tanggal).toLocaleDateString("id-ID", {
@@ -158,8 +198,8 @@ export default function KeuanganTable() {
                                         </TableCell>
                                         <TableCell className="px-4 py-3 text-theme-sm capitalize">
                                             <span className={`px-2 py-1 rounded-full text-xs font-medium ${item.jenis === "pemasukan"
-                                                    ? "bg-green-100 text-green-700"
-                                                    : "bg-red-100 text-red-700"
+                                                ? "bg-green-100 text-green-700"
+                                                : "bg-red-100 text-red-700"
                                                 }`}>
                                                 {item.jenis}
                                             </span>
@@ -195,6 +235,13 @@ export default function KeuanganTable() {
                     </div>
                 </div>
             </div>
+            {toast.show && (
+                <Toast
+                    message={toast.message}
+                    type={toast.type}
+                    onClose={hideToast}
+                />
+            )}
         </>
     );
 }

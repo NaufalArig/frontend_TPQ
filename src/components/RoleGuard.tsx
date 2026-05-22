@@ -16,7 +16,7 @@ export default function RoleGuard({ allow, children }: Props) {
   useEffect(() => {
     if (!loading) {
       if (!user) {
-        router.replace("/login");
+        router.replace("/auth/login");
         return;
       }
 
@@ -29,6 +29,8 @@ export default function RoleGuard({ allow, children }: Props) {
   if (loading) return <p>Loading...</p>;
 
   if (!user) return null;
+
+  if (!allow.includes(user.role || "")) return null;
 
   return <>{children}</>;
 }

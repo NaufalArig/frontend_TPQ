@@ -11,10 +11,21 @@ import { useEffect, useState } from "react";
 import { getSantri, deleteSantri } from "@/services/santri";
 import { Santri } from "@/types/santri";
 import { useRouter } from "next/navigation";
+import Toast from "@/components/ui/toast/Toast";
+import { useToast } from "@/hooks/useToast";
 
-export default function SantriTable() {
+type Props = {
+    search: string;
+    statusFilter: string;
+};
+
+export default function SantriTable({
+    search,
+    statusFilter,
+}: Props) {
     const [data, setData] = useState<Santri[]>([]);
     const [loading, setLoading] = useState(true);
+    const { toast, showToast, hideToast } = useToast();
     const [deleteModal, setDeleteModal] = useState<{ show: boolean; id: number | null; nama: string }>({
         show: false,
         id: null,
@@ -28,13 +39,32 @@ export default function SantriTable() {
 
     const handleDeleteConfirm = async () => {
         if (!deleteModal.id) return;
+
         try {
             await deleteSantri(deleteModal.id);
-            setData((prev) => prev.filter((item) => item.id !== deleteModal.id));
-            setDeleteModal({ show: false, id: null, nama: "" });
+
+            setData((prev) =>
+                prev.filter((item) => item.id !== deleteModal.id)
+            );
+
+            showToast(
+                `Data guru ${deleteModal.nama} berhasil dihapus!`,
+                "success"
+            );
+
+            setDeleteModal({
+                show: false,
+                id: null,
+                nama: "",
+            });
+
         } catch (error) {
             console.error(error);
-            alert("Gagal menghapus data");
+
+            showToast(
+                "Gagal menghapus data guru",
+                "error"
+            );
         }
     };
 
@@ -44,6 +74,21 @@ export default function SantriTable() {
             .catch(console.error)
             .finally(() => setLoading(false));
     }, []);
+
+    const filteredData = data.filter((santri) => {
+        const keyword = search.toLowerCase();
+
+        const matchSearch =
+            santri.nama.toLowerCase().includes(keyword) ||
+            santri.nama_wali.toLowerCase().includes(keyword) ||
+            santri.kontak_wali.toLowerCase().includes(keyword) ||
+            santri.alamat.toLowerCase().includes(keyword);
+
+        const matchStatus =
+            statusFilter === "" || santri.status === statusFilter;
+
+        return matchSearch && matchStatus;
+    });
 
     if (loading) return <p>Loading data santri...</p>;
 
@@ -95,61 +140,61 @@ export default function SantriTable() {
             <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/5] dark:bg-white/3">
                 <div className="max-w-full overflow-x-auto">
                     <div className="min-w-275.5">
-                        <Table>
+                        <Table className="border-brand-300">
                             {/* Table Header */}
-                            <TableHeader className="border-b border-gray-100 dark:border-white/5]">
+                            <TableHeader className="border-b border-brand-300 bg-brand-100">
                                 <TableRow>
                                     <TableCell
                                         isHeader
-                                        className="px-5 py-3 font-semibold text-black text-start text-theme-xs dark:text-gray-400"
+                                        className="px-4 py-3 font-semibold text-black text-start text-theme-xs dark:text-gray-400"
                                     >
                                         No
                                     </TableCell>
                                     <TableCell
                                         isHeader
-                                        className="px-5 py-3 font-semibold text-black text-start text-theme-xs dark:text-gray-400"
+                                        className="px-4 py-3 font-semibold text-black text-start text-theme-xs dark:text-gray-400"
                                     >
                                         Nama Santri
                                     </TableCell>
                                     <TableCell
                                         isHeader
-                                        className="px-5 py-3 font-semibold text-black text-start text-theme-xs dark:text-gray-400"
+                                        className="px-4 py-3 font-semibold text-black text-start text-theme-xs dark:text-gray-400"
                                     >
                                         Jenis Kelamin
                                     </TableCell>
                                     <TableCell
                                         isHeader
-                                        className="px-5 py-3 font-semibold text-black text-start text-theme-xs dark:text-gray-400"
+                                        className="px-4 py-3 font-semibold text-black text-start text-theme-xs dark:text-gray-400"
                                     >
                                         Tanggal Lahir
                                     </TableCell>
                                     <TableCell
                                         isHeader
-                                        className="px-5 py-3 font-semibold text-black text-start text-theme-xs dark:text-gray-400"
+                                        className="px-4 py-3 font-semibold text-black text-start text-theme-xs dark:text-gray-400"
                                     >
                                         Nama Wali
                                     </TableCell>
                                     <TableCell
                                         isHeader
-                                        className="px-5 py-3 font-semibold text-black text-start text-theme-xs dark:text-gray-400"
+                                        className="px-4 py-3 font-semibold text-black text-start text-theme-xs dark:text-gray-400"
                                     >
                                         Nomor Wali
                                     </TableCell>
                                     <TableCell
                                         isHeader
-                                        className="px-5 py-3 font-semibold text-black text-start text-theme-xs dark:text-gray-400"
+                                        className="px-4 py-3 font-semibold text-black text-start text-theme-xs dark:text-gray-400"
                                     >
                                         Alamat
                                     </TableCell>
                                     <TableCell
                                         isHeader
-                                        className="px-5 py-3 font-semibold text-black text-start text-theme-xs dark:text-gray-400"
+                                        className="px-4 py-3 font-semibold text-black text-start text-theme-xs dark:text-gray-400"
                                     >
                                         Status
                                     </TableCell>
                                     <TableCell
                                         isHeader
-                                        className="px-5 py-3 font-semibold text-black text-start text-theme-xs dark:text-gray-400"
+                                        className="px-4 py-3 font-semibold text-black text-start text-theme-xs dark:text-gray-400"
                                     >
                                         Aksi
                                     </TableCell>
@@ -158,7 +203,7 @@ export default function SantriTable() {
 
                             {/* Table Body */}
                             <TableBody className="divide-y divide-gray-100 dark:divide-white/5">
-                                {data.map((santri, index) => (
+                                {filteredData.map((santri, index) => (
                                     <TableRow key={santri.id}>
                                         <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
                                             {index + 1}
@@ -185,10 +230,10 @@ export default function SantriTable() {
                                         </TableCell>
                                         <TableCell className="px-4 py-3 text-start text-theme-sm">
                                             <span className={`px-2 py-1 rounded-full text-xs font-medium ${santri.status === "aktif" ? "bg-green-100 text-green-700" :
-                                                    santri.status === "pending" ? "bg-yellow-100 text-yellow-700" :
-                                                        santri.status === "lulus" ? "bg-blue-100 text-blue-700" :
-                                                            santri.status === "keluar" ? "bg-red-100 text-red-700" :
-                                                                "bg-gray-100 text-gray-700"
+                                                santri.status === "pending" ? "bg-yellow-100 text-yellow-700" :
+                                                    santri.status === "lulus" ? "bg-blue-100 text-blue-700" :
+                                                        santri.status === "keluar" ? "bg-red-100 text-red-700" :
+                                                            "bg-gray-100 text-gray-700"
                                                 }`}>
                                                 {santri.status}
                                             </span>
@@ -215,6 +260,13 @@ export default function SantriTable() {
                     </div>
                 </div>
             </div>
+            {toast.show && (
+                <Toast
+                    message={toast.message}
+                    type={toast.type}
+                    onClose={hideToast}
+                />
+            )}
         </>
     );
 }

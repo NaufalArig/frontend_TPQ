@@ -86,14 +86,14 @@ export default function KeuanganForm({ initialData, onSubmit }: Props) {
                 <button
                     type="submit"
                     disabled={loading}
-                    className="bg-blue-500 text-white px-6 py-2 rounded-lg text-sm"
+                    className="bg-brand-500 hover:bg-brand-600 text-white px-6 py-2.5 rounded-lg text-sm font-medium transition-colors disabled:opacity-70"
                 >
                     {loading ? "Menyimpan..." : "Simpan"}
                 </button>
                 <button
                     type="button"
                     onClick={() => router.push("/keuangan")}
-                    className="bg-gray-100 text-gray-600 px-6 py-2 rounded-lg text-sm"
+                    className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 py-2.5 rounded-lg text-sm font-medium transition-colors"
                 >
                     Batal
                 </button>

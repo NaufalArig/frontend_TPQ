@@ -14,6 +14,7 @@ import {
   UserIcon,
 } from "@/icons";
 import SidebarWidget from "./SidebarWidget";
+import { GroupIcon } from "lucide-react";
 
 type NavItem = {
   name: string;
@@ -46,13 +47,15 @@ const AppSidebar: React.FC = () => {
           { icon: <UserCircleIcon />, name: "Santri", path: "/santri" },
           { icon: <ListIcon />, name: "Guru", path: "/guru" },
           { icon: <BoxCubeIcon />, name: "Keuangan", path: "/keuangan" },
-          { icon: <UserIcon/>, name: "User", path: "/users"}
+          { icon: <UserIcon />, name: "User", path: "/users" },
+          { icon: <GroupIcon />, name: "Absensi", path: "/absensi" }
         ];
 
       case "guru":
         return [
           { icon: <GridIcon />, name: "Dashboard", path: "/dashboard" },
           { icon: <UserCircleIcon />, name: "Santri", path: "/santri" },
+          { icon: <GroupIcon />, name: "Absensi", path: "/absensi" }
         ];
 
       case "bendahara":
@@ -145,7 +148,7 @@ const AppSidebar: React.FC = () => {
           ))}
         </ul>
       </nav>
-      <SidebarWidget/>
+      <SidebarWidget />
     </aside>
   );
 };
