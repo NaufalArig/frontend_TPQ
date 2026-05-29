@@ -13,6 +13,7 @@ import { Santri } from "@/types/santri";
 import { useRouter } from "next/navigation";
 import Toast from "@/components/ui/toast/Toast";
 import { useToast } from "@/hooks/useToast";
+import Image from "next/image";
 
 type Props = {
     search: string;
@@ -209,7 +210,28 @@ export default function SantriTable({
                                             {index + 1}
                                         </TableCell>
                                         <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
-                                            {santri.nama}
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-10 h-10 overflow-hidden rounded-full border border-gray-200">
+                                                    <Image
+                                                        width={40}
+                                                        height={40}
+                                                        className="h-full w-full object-cover"
+
+                                                        src={
+                                                            santri.foto
+                                                                ? `http://127.0.0.1:8000/storage/${santri.foto}`
+                                                                : "/images/user/default-user.jpg"
+                                                        }
+                                                        alt={santri.nama}
+                                                    />
+                                                </div>
+
+                                                <div>
+                                                    <span className="block font-medium text-gray-800 text-theme-sm capitalize">
+                                                        {santri.nama}
+                                                    </span>
+                                                </div>
+                                            </div>
                                         </TableCell>
                                         <TableCell className="px-4 py-3 text-gray-500 text-start text-theme-sm dark:text-gray-400">
                                             {santri.jenis_kelamin === "L"

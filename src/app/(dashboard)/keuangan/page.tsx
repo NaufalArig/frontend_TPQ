@@ -6,6 +6,7 @@ import KeuanganTable from "./components/KeuanganTable";
 import Link from "next/link";
 import RoleGuard from "@/components/RoleGuard";
 import { useState } from "react";
+import { downloadLaporanKeuangan } from "@/services/keuangan";
 
 export default function KeuanganPage() {
   const [search, setSearch] = useState("");
@@ -22,6 +23,12 @@ export default function KeuanganPage() {
               className="bg-brand-600 text-white px-4 py-2 rounded-lg hover:bg-brand-500"
             >Tambah Keuangan
             </Link>
+            <button
+              onClick={downloadLaporanKeuangan}
+              className="rounded-lg border border-brand-700 bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600"
+            >
+              Download Laporan
+            </button>
           </div>
           <ComponentCard
             title="Daftar Tabel Keuangan"

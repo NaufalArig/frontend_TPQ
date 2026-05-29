@@ -41,15 +41,7 @@ export default function EditSantriPage({ params }: Props) {
             return;
         }
 
-        await updateSantri(santri.id, {
-            nama: data.nama,
-            jenis_kelamin: data.jenis_kelamin,
-            tanggal_lahir: data.tanggal_lahir,
-            nama_wali: data.nama_wali,
-            kontak_wali: data.kontak_wali,
-            alamat: data.alamat,
-            status: data.status,
-        });
+        await updateSantri(santri.id, data);
     };
 
     const handleSuccess = (message: string) => {

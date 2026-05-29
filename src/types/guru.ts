@@ -1,10 +1,13 @@
 export type GuruFormData = {
     nama: string;
+    email?: string;
+    password?: string;
     alamat: string;
     kontak: string;
     tanggal_masuk: string;
     tanggal_keluar: string;
-    status: "aktif" | "nonaktif";
+    status: "pending" | "aktif" | "nonaktif";
+    foto?: File | null;
 };
 
 export type Guru = GuruFormData & {

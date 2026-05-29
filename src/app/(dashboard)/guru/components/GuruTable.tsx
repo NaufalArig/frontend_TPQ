@@ -13,6 +13,7 @@ import { Guru } from "@/types/guru";
 import { useRouter } from "next/navigation";
 import Toast from "@/components/ui/toast/Toast";
 import { useToast } from "@/hooks/useToast";
+import Image from "next/image";
 
 type Props = {
     search: string;
@@ -71,7 +72,6 @@ export default function GuruTable({
 
     const filteredData = data.filter((guru) => {
         const keyword = search.toLowerCase();
-
         const matchSearch =
             guru.nama.toLowerCase().includes(keyword) ||
             guru.kontak.toLowerCase().includes(keyword) ||
@@ -80,6 +80,7 @@ export default function GuruTable({
         const matchStatus =
             statusFilter === "" || guru.status === statusFilter;
 
+        console.log("foto value:", guru.foto);
         return matchSearch && matchStatus;
     });
 
@@ -155,17 +156,42 @@ export default function GuruTable({
                                 {filteredData.map((guru, index) => (
                                     <TableRow key={guru.id}>
                                         <TableCell className="px-4 py-3 text-gray-500 text-theme-sm dark:text-gray-400">{index + 1}</TableCell>
-                                        <TableCell className="px-4 py-3 text-gray-500 text-theme-sm dark:text-gray-400">{guru.nama}</TableCell>
+                                        <TableCell className="px-4 py-3 text-gray-500 text-theme-sm dark:text-gray-400">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-10 h-10 overflow-hidden rounded-full border border-gray-200">
+                                                    <Image
+                                                        width={40}
+                                                        height={40}
+                                                        className="h-full w-full object-cover"
+
+                                                        src={
+                                                            guru.foto
+                                                                ? `http://127.0.0.1:8000/storage/${guru.foto}`
+                                                                : "/images/user/default-user.jpg"
+                                                        }
+                                                        alt={guru.nama}
+                                                    />
+                                                </div>
+
+                                                <div>
+                                                    <span className="block font-medium text-gray-800 text-theme-sm dark:text-white/90">
+                                                        {guru.nama}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </TableCell>
                                         <TableCell className="px-4 py-3 text-gray-500 text-theme-sm dark:text-gray-400">{guru.kontak}</TableCell>
                                         <TableCell className="px-4 py-3 text-gray-500 text-theme-sm dark:text-gray-400">{guru.alamat}</TableCell>
                                         <TableCell className="px-4 py-3 text-gray-500 text-theme-sm dark:text-gray-400">{guru.tanggal_masuk}</TableCell>
                                         <TableCell className="px-4 py-3 text-gray-500 text-center text-theme-sm dark:text-gray-400">
-                                            {guru.status === "aktif" ? "-" : guru.tanggal_keluar}
+                                            {guru.status === "pending" ? "-" : guru.status === "aktif" ? "-" : guru.tanggal_keluar}
                                         </TableCell>
                                         <TableCell className="px-4 py-3 text-theme-sm capitalize">
                                             <span className={`px-2 py-1 rounded-full text-xs font-medium ${guru.status === "aktif"
                                                 ? "bg-green-100 text-green-700"
-                                                : "bg-red-100 text-red-700"
+                                                : guru.status === "pending"
+                                                    ? "bg-yellow-100 text-yellow-700"
+                                                    : "bg-red-100 text-red-700"
                                                 }`}>
                                                 {guru.status}
                                             </span>

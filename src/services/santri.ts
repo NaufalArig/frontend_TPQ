@@ -1,5 +1,6 @@
 import API_URL from "@/lib/api";
 import Cookies from "js-cookie";
+import { SantriFormData } from "@/types/santri";
 
 function getToken() {
     if (typeof document === "undefined") return null;
@@ -44,32 +45,33 @@ export async function getSantri() {
     return res.json();
 }
 
+function buildSantriFormData(data: SantriFormData) {
+    const formData = new FormData();
+
+    Object.entries(data).forEach(([key, value]) => {
+        if (value !== null && value !== undefined && value !== "") {
+            formData.append(key, value as string | Blob);
+        }
+    });
+
+    return formData;
+}
+
 //Function Tambah Santri
-export async function createSantri(data: {
-    nama: string;
-    jenis_kelamin: "L" | "P" | "";
-    tanggal_lahir: string;
-    nama_wali: string;
-    kontak_wali: string;
-    alamat: string;
-}) {
+export async function createSantri(data: SantriFormData) {
     const token = Cookies.get("token");
+    const formData = buildSantriFormData(data);
 
     const res = await fetch(`${API_URL}/santri`, {
         method: "POST",
         headers: {
-            "Content-Type": "application/json",
             Accept: "application/json",
             Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(data),
+        body: formData,
     });
 
     const result = await res.json();
-
-    // DEBUG: tampilkan response backend
-    console.log("STATUS:", res.status);
-    console.log("RESULT:", result);
 
     if (!res.ok) {
         throw new Error(result.message || JSON.stringify(result));
@@ -81,34 +83,29 @@ export async function createSantri(data: {
 //Function Edit Santri
 export async function updateSantri(
     id: string | number,
-    data: {
-        nama: string;
-        jenis_kelamin: "L" | "P";
-        tanggal_lahir: string;
-        nama_wali: string;
-        kontak_wali: string;
-        alamat: string;
-        status: string;
-    }
+    data: SantriFormData
 ) {
     const token = getToken();
+    const formData = buildSantriFormData(data);
+
+    formData.append("_method", "PUT");
 
     const res = await fetch(`${API_URL}/santri/${id}`, {
-        method: "PUT",
+        method: "POST",
         headers: {
-            "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
             Accept: "application/json",
         },
-        body: JSON.stringify(data),
+        body: formData,
     });
 
+    const result = await res.json();
+
     if (!res.ok) {
-        const error = await res.json();
-        throw new Error(JSON.stringify(error.errors || error));
+        throw new Error(JSON.stringify(result.errors || result));
     }
 
-    return res.json();
+    return result;
 }
 
 export async function deleteSantri(id: number) {

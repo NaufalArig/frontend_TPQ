@@ -60,6 +60,7 @@ export default function GuruPage() {
                   className="w-full rounded-lg border border-brand-300 hover:bg-brand-100 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-500 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 sm:w-44"
                 >
                   <option value="">Semua Status</option>
+                  <option value="pending">Pending</option>
                   <option value="aktif">Aktif</option>
                   <option value="nonaktif">Nonaktif</option>
                 </select>

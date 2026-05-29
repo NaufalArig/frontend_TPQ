@@ -7,6 +7,7 @@ import { Dropdown } from "../ui/dropdown/Dropdown";
 import { DropdownItem } from "../ui/dropdown/DropdownItem";
 import { useUser } from "@/context/UserContext";
 import { logout } from "@/services/auth";
+import { Icon } from "lucide-react";
 
 export default function UserDropdown() {
   const [isOpen, setIsOpen] = useState(false);
@@ -155,7 +156,12 @@ export default function UserDropdown() {
           className="flex items-center text-gray-700 dropdown-toggle"
         >
           <span className="mr-3 overflow-hidden rounded-full h-11 w-11">
-            <Image width={44} height={44} src="/images/user/owner.jpg" alt="User" />
+            <Image
+            width={44}
+            height={44}
+            src="/images/user/admin.png"
+            alt="User"
+          />
           </span>
           <span className="block mr-1 font-medium text-theme-sm">
             {user?.name || "User"}

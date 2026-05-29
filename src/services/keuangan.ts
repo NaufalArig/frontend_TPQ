@@ -1,5 +1,6 @@
 import API_URL from "@/lib/api";
 import { KeuanganFormData } from "@/types/keuangan";
+import api from "@/lib/axios";
 
 function getToken() {
     if (typeof document === "undefined") return null;
@@ -75,4 +76,21 @@ export async function deleteKeuangan(id: number) {
     });
     if (!res.ok) throw new Error("Gagal menghapus transaksi");
     return res.json();
+}
+
+export async function downloadLaporanKeuangan() {
+    const res = await api.get("/laporan/keuangan/download", {
+        responseType: "blob",
+    });
+
+    const url = window.URL.createObjectURL(new Blob([res.data]));
+    const link = document.createElement("a");
+
+    link.href = url;
+    link.setAttribute("download", "laporan-keuangan.pdf");
+    document.body.appendChild(link);
+    link.click();
+
+    link.remove();
+    window.URL.revokeObjectURL(url);
 }

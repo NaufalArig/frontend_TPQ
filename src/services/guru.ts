@@ -39,6 +39,7 @@ export async function getGuru() {
             Accept: "application/json",
         },
     });
+    console.log("API response:", res.json);
 
     if (!res.ok) {
         throw new Error("Gagal mengambil data guru");
@@ -47,25 +48,27 @@ export async function getGuru() {
     return res.json();
 }
 
-//Function Tambah Guru
 export async function createGuru(data: GuruFormData) {
     const token = Cookies.get("token");
+
+    const formData = new FormData();
+
+    Object.entries(data).forEach(([key, value]) => {
+        if (value !== null && value !== undefined) {
+            formData.append(key, value as string | Blob);
+        }
+    });
 
     const res = await fetch(`${API_URL}/guru`, {
         method: "POST",
         headers: {
-            "Content-Type": "application/json",
             Accept: "application/json",
             Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(data),
+        body: formData,
     });
 
     const result = await res.json();
-
-    // DEBUG: tampilkan response backend
-    console.log("STATUS:", res.status);
-    console.log("RESULT:", result);
 
     if (!res.ok) {
         throw new Error(result.message || JSON.stringify(result));
@@ -74,21 +77,29 @@ export async function createGuru(data: GuruFormData) {
     return result;
 }
 
-//Function Edit Guru
 export async function updateGuru(
     id: string | number,
     data: GuruFormData
 ) {
     const token = getToken();
 
+    const formData = new FormData();
+
+    Object.entries(data).forEach(([key, value]) => {
+        if (value !== null && value !== undefined) {
+            formData.append(key, value as string | Blob);
+        }
+    });
+
+    formData.append("_method", "PUT");
+
     const res = await fetch(`${API_URL}/guru/${id}`, {
-        method: "PUT",
+        method: "POST",
         headers: {
-            "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
             Accept: "application/json",
         },
-        body: JSON.stringify(data),
+        body: formData,
     });
 
     if (!res.ok) {
