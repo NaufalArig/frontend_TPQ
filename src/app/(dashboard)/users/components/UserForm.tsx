@@ -131,18 +131,18 @@ export default function UserForm({ initialData, onSubmit, onSuccess }: Props) {
                 </select>
             </div>
 
-            <div className="flex gap-3 pt-2">
+            <div className="flex flex-col gap-3 pt-1 sm:flex-row">
                 <button
                     type="submit"
                     disabled={loading}
-                    className="bg-brand-500 hover:bg-brand-600 text-white px-6 py-2.5 rounded-lg text-sm font-medium transition-colors disabled:opacity-70"
+                    className="w-full sm:w-auto bg-brand-500 hover:bg-brand-600 text-white px-6 py-2.5 rounded-lg text-sm font-medium transition-colors disabled:opacity-70"
                 >
                     {loading ? "Menyimpan..." : "Simpan"}
                 </button>
                 <button
                     type="button"
                     onClick={() => router.push("/users")}
-                    className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 py-2.5 rounded-lg text-sm font-medium transition-colors"
+                    className="w-full sm:w-auto border border-gray-600 bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 py-2.5 rounded-lg text-sm font-medium transition-colors"
                 >
                     Batal
                 </button>

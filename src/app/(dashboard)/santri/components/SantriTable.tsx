@@ -140,7 +140,7 @@ export default function SantriTable({
 
             <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/5] dark:bg-white/3">
                 <div className="max-w-full overflow-x-auto">
-                    <div className="min-w-275.5">
+                    <div className="min-w-[1100px]">
                         <Table className="border-brand-300">
                             {/* Table Header */}
                             <TableHeader className="border-b border-brand-300 bg-brand-100">
@@ -251,7 +251,7 @@ export default function SantriTable({
                                             {santri.alamat}
                                         </TableCell>
                                         <TableCell className="px-4 py-3 text-start text-theme-sm">
-                                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${santri.status === "aktif" ? "bg-green-100 text-green-700" :
+                                            <span className={`px-2 py-1 rounded-full text-xs capitalize font-medium ${santri.status === "aktif" ? "bg-green-100 text-green-700" :
                                                 santri.status === "pending" ? "bg-yellow-100 text-yellow-700" :
                                                     santri.status === "lulus" ? "bg-blue-100 text-blue-700" :
                                                         santri.status === "keluar" ? "bg-red-100 text-red-700" :

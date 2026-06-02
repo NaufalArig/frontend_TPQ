@@ -17,10 +17,10 @@ const ComponentCard: React.FC<ComponentCardProps> = ({
 }) => {
   return (
     <div
-      className={`rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] ${className}`}
+      className={`rounded-2xl border border-gray-200 bg-white ${className}`}
     >
       {/* Card Header */}
-      <div className="flex flex-col gap-4 px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-4 px-4 py-5 sm:px-6 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <h3 className="text-base font-medium text-gray-800 dark:text-white/90">
             {title}
@@ -33,7 +33,7 @@ const ComponentCard: React.FC<ComponentCardProps> = ({
           )}
         </div>
 
-        {action && <div>{action}</div>}
+        {action && <div className="w-full lg:w-auto">{action}</div>}
       </div>
 
       {/* Card Body */}

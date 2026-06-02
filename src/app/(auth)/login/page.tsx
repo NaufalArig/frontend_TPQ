@@ -7,7 +7,6 @@ import Input from "@/components/form/InputField";
 import Label from "@/components/form/Label";
 import Button from "@/components/ui/button/Button";
 import { EyeCloseIcon, EyeIcon } from "@/icons";
-import Link from "next/link";
 import React, { useState } from "react";
 import Toast from "@/components/ui/toast/Toast";
 import { useToast } from "@/hooks/useToast";
@@ -15,7 +14,7 @@ import { useToast } from "@/hooks/useToast";
 export default function LoginPage() {
     const [showPassword, setShowPassword] = useState(false);
     const [isChecked, setIsChecked] = useState(false);
-    const [name, setName] = useState("");
+    const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [loading, setLoading] = useState(false);
     const [showSuccess, setShowSuccess] = useState(false);
@@ -24,8 +23,8 @@ export default function LoginPage() {
     const handleLogin = async (e: React.SyntheticEvent<HTMLFormElement>) => {
         e.preventDefault();
 
-        if (!name.trim()) {
-            showToast("Nama user wajib diisi", "error");
+        if (!email.trim()) {
+            showToast("Email wajib diisi", "error");
             return;
         }
 
@@ -37,7 +36,7 @@ export default function LoginPage() {
         setLoading(true);
 
         try {
-            const res = await login(name, password);
+            const res = await login(email, password);
 
             localStorage.clear();
             Cookies.remove("token");
@@ -47,13 +46,13 @@ export default function LoginPage() {
 
             setTimeout(() => {
                 window.location.replace("/dashboard");
-            }, 2000);
+            }, 1000);
 
         } catch (err: unknown) {
             if (err instanceof Error) {
                 showToast(err.message, "error");
             } else {
-                showToast("Nama user atau password salah", "error");
+                showToast("Email atau password salah", "error");
             }
         } finally {
             setLoading(false);
@@ -93,11 +92,11 @@ export default function LoginPage() {
                             Masuk Berhasil!
                         </h3>
                         <p className="text-sm text-gray-500 mb-5">
-                            Selamat datang kembali, <span className="font-semibold text-gray-700 capitalize">{name}</span>
+                            Selamat datang kembali, <span className="font-semibold text-gray-700 capitalize">{email}</span>
                         </p>
 
                         <div className="w-48 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                            <div className="h-full bg-green-500 rounded-full animate-[loadBar_2s_linear_forwards]" />
+                            <div className="h-full bg-green-500 rounded-full animate-[loadBar_1s_linear_forwards]" />
                         </div>
                         <p className="text-xs text-gray-400 mt-2">Mengalihkan ke dashboard...</p>
                     </div>
@@ -112,7 +111,7 @@ export default function LoginPage() {
                                 Masuk
                             </h1>
                             <p className="text-sm text-gray-500 dark:text-gray-400">
-                                Masukan nama user kamu dan kata sandi kamu!
+                                Masukan email kamu dan kata sandi kamu!
                             </p>
                         </div>
 
@@ -122,12 +121,12 @@ export default function LoginPage() {
                         >
                             <div className="space-y-6">
                                 <div>
-                                    <Label>Nama User<span className="text-error-500">*</span></Label>
+                                    <Label>Email<span className="text-error-500">*</span></Label>
                                     <Input
-                                        placeholder="Ketik nama usermu"
-                                        type="text"
-                                        value={name}
-                                        onChange={(e) => setName(e.target.value)}
+                                        placeholder="user@gmail.com"
+                                        type="email"
+                                        value={email}
+                                        onChange={(e) => setEmail(e.target.value)}
                                     />
                                 </div>
                                 <div>
@@ -158,12 +157,6 @@ export default function LoginPage() {
                                             Keep me logged in
                                         </span>
                                     </div>
-                                    <Link
-                                        href="/reset-password"
-                                        className="text-sm text-brand-500 hover:text-brand-600 dark:text-brand-400"
-                                    >
-                                        Lupa kata sandi?
-                                    </Link>
                                 </div>
                                 <div>
                                     <Button

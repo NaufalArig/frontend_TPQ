@@ -17,10 +17,10 @@ export default function KeuanganPage() {
       <div>
         <PageBreadcrumb pageTitle="Menu Keuangan" />
         <div className="space-y-6">
-          <div className="flex justify-between items-center mb-6">
+          <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between mb-6">
             <Link
               href="/keuangan/create"
-              className="bg-brand-600 text-white px-4 py-2 rounded-lg hover:bg-brand-500"
+              className="bg-brand-600 text-white px-4 py-2 rounded-lg hover:bg-brand-500 text-center"
             >Tambah Keuangan
             </Link>
             <button

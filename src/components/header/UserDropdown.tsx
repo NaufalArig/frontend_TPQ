@@ -42,7 +42,7 @@ export default function UserDropdown() {
       setShowLogoutSuccess(true);
 
       setTimeout(() => {
-        router.push("/auth/login");
+        router.push("/login");
       }, 2000);
 
     } catch (error) {
@@ -153,9 +153,9 @@ export default function UserDropdown() {
       <div className="relative">
         <button
           onClick={toggleDropdown}
-          className="flex items-center text-gray-700 dropdown-toggle"
+          className="flex items-center text-gray-700 dropdown-toggle border border-brand-300 rounded-4xl bg-brand-200 hover:bg-brand-100"
         >
-          <span className="mr-3 overflow-hidden rounded-full h-11 w-11">
+          <span className="ml-1 overflow-hidden rounded-full h-11 w-11 p-1">
             <Image
             width={44}
             height={44}
@@ -163,11 +163,11 @@ export default function UserDropdown() {
             alt="User"
           />
           </span>
-          <span className="block mr-1 font-medium text-theme-sm">
+          <span className="block font-medium text-theme-sm p-1">
             {user?.name || "User"}
           </span>
           <svg
-            className={`stroke-gray-500 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
+            className={`stroke-gray-500 transition-transform duration-200 ${isOpen ? "rotate-180" : ""} mr-2`}
             width="18" height="20" viewBox="0 0 18 20" fill="none" xmlns="http://www.w3.org/2000/svg"
           >
             <path d="M4.3125 8.65625L9 13.3437L13.6875 8.65625" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />

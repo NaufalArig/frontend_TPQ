@@ -176,10 +176,10 @@ export default function SantriForm({ initialData, onSubmit, onSuccess }: Props) 
     return (
         <>
             <form onSubmit={handleSubmit} className="mb-6">
-                <div className="flex gap-6 items-start">
+                <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
 
                     {/* ── Kiri: Foto Panel ── */}
-                    <div className="flex-shrink-0 flex flex-col gap-2" style={{ width: 150 }}>
+                    <div className="mx-auto flex w-[150px] flex-shrink-0 flex-col gap-2 lg:mx-0">
                         <div className="flex items-center justify-between">
                             <span className="text-xs text-gray-500 font-medium">Foto Profil</span>
                             <span className="text-[10px] bg-gray-100 px-1.5 py-0.5 rounded text-gray-400 font-medium">3×4</span>
@@ -337,7 +337,7 @@ export default function SantriForm({ initialData, onSubmit, onSuccess }: Props) 
                         )}
                     </div>
 
-                    <div className="flex-1 space-y-4">
+                    <div className="w-full flex-1 space-y-4">
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                                 <Label>Nama Santri <span className="text-error-500">*</span></Label>
@@ -441,18 +441,18 @@ export default function SantriForm({ initialData, onSubmit, onSuccess }: Props) 
                             </div>
                         )}
 
-                        <div className="flex gap-3 pt-2">
+                        <div className="flex flex-col gap-3 pt-1 sm:flex-row">
                             <button
                                 type="submit"
                                 disabled={loading}
-                                className="bg-brand-500 hover:bg-brand-600 text-white px-6 py-2.5 rounded-lg text-sm font-medium transition-colors disabled:opacity-70"
+                                className="w-full sm:w-auto bg-brand-500 hover:bg-brand-600 text-white px-6 py-2.5 rounded-lg text-sm font-medium transition-colors disabled:opacity-70"
                             >
                                 {loading ? "Menyimpan..." : "Simpan"}
                             </button>
                             <button
                                 type="button"
                                 onClick={() => router.push("/santri")}
-                                className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 py-2.5 rounded-lg text-sm font-medium transition-colors"
+                                className="w-full sm:w-auto bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 py-2.5 rounded-lg text-sm font-medium transition-colors"
                             >
                                 Batal
                             </button>

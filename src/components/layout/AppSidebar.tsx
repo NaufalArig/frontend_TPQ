@@ -6,14 +6,7 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useSidebar } from "@/context/SidebarContext";
 import { useUser } from "@/context/UserContext";
-import {
-  BoxCubeIcon,
-  GridIcon,
-  ListIcon,
-  UserCircleIcon,
-  UserIcon,
-} from "@/icons";
-import SidebarWidget from "./SidebarWidget";
+import { BoxCubeIcon, GridIcon, ListIcon, UserCircleIcon, UserIcon } from "@/icons";
 import { GroupIcon } from "lucide-react";
 
 type NavItem = {
@@ -24,13 +17,7 @@ type NavItem = {
 
 const AppSidebar: React.FC = () => {
   const { user, loading } = useUser();
-  console.log("USER:", user);
-  const {
-    isExpanded,
-    isMobileOpen,
-    isHovered,
-    setIsHovered,
-  } = useSidebar();
+  const { isExpanded, isMobileOpen, isHovered, setIsHovered, toggleMobileSidebar } = useSidebar();
   const pathname = usePathname();
 
   const isActive = (path: string) => path === pathname;
@@ -39,7 +26,6 @@ const AppSidebar: React.FC = () => {
 
   const getMenuByRole = (): NavItem[] => {
     if (!user) return [];
-
     switch (user.role?.toLowerCase()) {
       case "admin":
         return [
@@ -48,108 +34,107 @@ const AppSidebar: React.FC = () => {
           { icon: <ListIcon />, name: "Guru", path: "/guru" },
           { icon: <BoxCubeIcon />, name: "Keuangan", path: "/keuangan" },
           { icon: <UserIcon />, name: "User", path: "/users" },
-          { icon: <GroupIcon />, name: "Absensi", path: "/absensi" }
+          { icon: <GroupIcon />, name: "Absensi", path: "/absensi" },
         ];
-
       case "guru":
         return [
           { icon: <GridIcon />, name: "Dashboard", path: "/dashboard" },
           { icon: <UserCircleIcon />, name: "Santri", path: "/santri" },
-          { icon: <GroupIcon />, name: "Absensi", path: "/absensi" }
+          { icon: <GroupIcon />, name: "Absensi", path: "/absensi" },
         ];
-
       case "bendahara":
         return [
           { icon: <GridIcon />, name: "Dashboard", path: "/dashboard" },
           { icon: <BoxCubeIcon />, name: "Keuangan", path: "/keuangan" },
         ];
-
       default:
         return [];
     }
   };
-  console.log("ROLE:", user?.role);
-  console.log("MENU:", getMenuByRole());
 
   const menuItems = getMenuByRole();
+  const sidebarOpen = isExpanded || isHovered || isMobileOpen;
 
   return (
-    <aside
-      className={`fixed top-0 left-0 z-50 h-screen bg-brand-200 border-r border-brand-300 transition-all duration-300 ${isExpanded || isHovered || isMobileOpen
-        ? "w-72.5"
-        : "w-22.5"
-        } ${isMobileOpen
-          ? "translate-x-0"
-          : "-translate-x-full lg:translate-x-0"
-        }`
-      }
-      onMouseEnter={() => {
-        if (!isExpanded) {
-          setIsHovered(true);
-        }
-      }}
-      onMouseLeave={() => {
-        setIsHovered(false);
-      }}
-    >
-      {/* LOGO */}
-      <div className="p-4">
-        <div
-          className="flex items-center gap-3"
-        >
-          <Image
-            src="/images/logo/logo-01.png"
-            alt="logo"
-            width={isExpanded || isHovered || isMobileOpen ? 50 : 40}
-            height={40}
-          />
+    <>
+      <aside
+        className={`
+          fixed top-0 left-0 z-50 h-screen
+          bg-brand-200 border-r border-brand-300
+          transition-all duration-300 ease-in-out
+          ${sidebarOpen ? "w-[280px] max-w-[82vw]" : "w-[90px]"}
+          ${isMobileOpen ? "translate-x-0" : "-translate-x-full xl:translate-x-0"}
+        `}
+        onMouseEnter={() => { if (!isExpanded) setIsHovered(true); }}
+        onMouseLeave={() => setIsHovered(false)}
+      >
+        <div className="flex items-center justify-between p-4 h-[65px]">
+          <div className="flex items-center gap-3">
+            <Image
+              src="/images/logo/logo-01.png"
+              alt="logo"
+              width={sidebarOpen ? 50 : 40}
+              height={40}
+              className="flex-shrink-0"
+            />
 
-          {(isExpanded || isHovered || isMobileOpen) && (
-            <div className="flex flex-col leading-tight">
-              <span className="text-lg font-bold text-gray-800">
-                TPQ
-              </span>
-              <span className="text-xs text-gray-700">
-                Admin Panel
-              </span>
-            </div>
+            {sidebarOpen && (
+              <div className="flex flex-col leading-tight overflow-hidden">
+                <span className="text-lg font-bold text-gray-800 whitespace-nowrap">
+                  TPQ
+                </span>
+                <span className="text-xs text-gray-700 whitespace-nowrap">
+                  Admin Panel
+                </span>
+              </div>
+            )}
+          </div>
+
+          {isMobileOpen && (
+            <button
+              type="button"
+              onClick={toggleMobileSidebar}
+              className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-500 border border-brand-300 text-gray-700 hover:bg-brand-400 xl:hidden"
+              aria-label="Tutup sidebar"
+            >
+              ✕
+            </button>
           )}
         </div>
-      </div>
-      <hr className="border-brand-300 border" />
-      {/* MENU */}
-      <nav className="px-4 mt-5">
-        {(isExpanded || isHovered || isMobileOpen) && (
-          <h2 className="text-xs text-black mb-4 mt-2">
-            Menu
-          </h2>
-        )}
-        <ul className="flex flex-col gap-3">
-          {menuItems.map((item) => (
-            <li key={item.name}>
-              <Link
-                href={item.path}
-                className={`flex items-center px-3 py-2 rounded-lg transition
-                  ${!isExpanded && !isHovered
-                    ? "justify-center"
-                    : "gap-3"}
-                  ${isActive(item.path)
-                    ? "bg-brand-500 text-white"
-                    : "text-gray-700 hover:bg-gray-200"}
-                    `}
-              >
-                {item.icon}
 
-                {(isExpanded || isHovered || isMobileOpen) && (
-                  <span>{item.name}</span>
-                )}
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </nav>
-      <SidebarWidget />
-    </aside>
+        <hr className="border border-brand-300" />
+
+        <nav className="px-3 mt-5">
+          {sidebarOpen && (
+            <h2 className="text-xs text-black mb-4 mt-2 px-1 uppercase tracking-wider">Menu</h2>
+          )}
+          <ul className="flex flex-col gap-1">
+            {menuItems.map((item) => (
+              <li key={item.name}>
+                <Link
+                  href={item.path}
+                  onClick={() => {
+                    if (isMobileOpen) toggleMobileSidebar();
+                  }}
+                  className={`
+                    flex items-center px-3 py-2.5 rounded-lg transition-colors
+                    ${sidebarOpen ? "gap-3" : "justify-center"}
+                    ${isActive(item.path)
+                      ? "bg-brand-500 text-white"
+                      : "text-gray-700 hover:bg-brand-300/50"}
+                  `}
+                >
+                  <span className="flex-shrink-0">{item.icon}</span>
+                  {sidebarOpen && (
+                    <span className="text-sm font-medium whitespace-nowrap">{item.name}</span>
+                  )}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      </aside>
+    </>
   );
 };
 

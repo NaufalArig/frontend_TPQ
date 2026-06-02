@@ -155,7 +155,7 @@ export default function UserTable({
 
             <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/5 dark:bg-white/3">
                 <div className="max-w-full overflow-x-auto">
-                    <div className="min-w-275.5">
+                    <div className="min-w-[900px]">
                         <Table>
                             <TableHeader className="border-b border-brand-300 bg-brand-100">
                                 <TableRow>

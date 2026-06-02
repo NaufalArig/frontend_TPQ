@@ -41,7 +41,8 @@ export default function KeuanganForm({ initialData, onSubmit }: Props) {
     };
 
     return (
-        <form onSubmit={handleSubmit} className="space-y-4 mb-6">
+    <form onSubmit={handleSubmit} className="mb-6">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <DatePicker
                 id="tanggal"
                 label="Tanggal Transaksi"
@@ -55,7 +56,7 @@ export default function KeuanganForm({ initialData, onSubmit }: Props) {
                 <select
                     value={form.jenis}
                     onChange={(e) => update("jenis", e.target.value)}
-                    className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
                 >
                     <option value="pemasukan">Pemasukan</option>
                     <option value="pengeluaran">Pengeluaran</option>
@@ -81,23 +82,25 @@ export default function KeuanganForm({ initialData, onSubmit }: Props) {
                     onChange={(e) => update("keterangan", e.target.value)}
                 />
             </div>
+        </div>
 
-            <div className="flex gap-3 pt-2">
-                <button
-                    type="submit"
-                    disabled={loading}
-                    className="bg-brand-500 hover:bg-brand-600 text-white px-6 py-2.5 rounded-lg text-sm font-medium transition-colors disabled:opacity-70"
-                >
-                    {loading ? "Menyimpan..." : "Simpan"}
-                </button>
-                <button
-                    type="button"
-                    onClick={() => router.push("/keuangan")}
-                    className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 py-2.5 rounded-lg text-sm font-medium transition-colors"
-                >
-                    Batal
-                </button>
-            </div>
-        </form>
-    );
+        <div className="mt-5 flex flex-col gap-3 sm:flex-row">
+            <button
+                type="submit"
+                disabled={loading}
+                className="w-full rounded-lg bg-brand-500 px-6 py-2.5 text-sm font-medium text-white transition-colors hover:bg-brand-600 disabled:opacity-70 sm:w-auto"
+            >
+                {loading ? "Menyimpan..." : "Simpan"}
+            </button>
+
+            <button
+                type="button"
+                onClick={() => router.push("/keuangan")}
+                className="w-full rounded-lg bg-gray-100 px-6 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-200 sm:w-auto"
+            >
+                Batal
+            </button>
+        </div>
+    </form>
+);
 }

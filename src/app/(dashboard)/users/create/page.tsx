@@ -8,8 +8,8 @@ export default function CreateUserPage() {
 
     return (
         <div>
-            <PageBreadcrumb pageTitle="Tambah Guru" />
-            <ComponentCard title="Form Tambah Guru">
+            <PageBreadcrumb pageTitle="Tambah User" />
+            <ComponentCard title="Form Tambah User">
                 <div>
                     <UserForm />
                 </div>

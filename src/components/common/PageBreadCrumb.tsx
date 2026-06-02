@@ -7,18 +7,18 @@ interface BreadcrumbProps {
 
 const PageBreadcrumb: React.FC<BreadcrumbProps> = ({ pageTitle }) => {
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
+    <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
       <h2
-        className="text-xl font-semibold text-gray-800 dark:text-white/90"
+        className="text-xl font-semibold text-gray-800"
         x-text="pageName"
       >
         {pageTitle}
       </h2>
-      <nav>
+      {/* <nav>
         <ol className="flex items-center gap-1.5">
           <li>
             <Link
-              className="inline-flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400"
+              className="inline-flex items-center gap-1.5 text-sm text-gray-500"
               href="/dashboard"
             >
               Dashboard
@@ -44,7 +44,7 @@ const PageBreadcrumb: React.FC<BreadcrumbProps> = ({ pageTitle }) => {
             {pageTitle}
           </li>
         </ol>
-      </nav>
+      </nav> */}
     </div>
   );
 };
