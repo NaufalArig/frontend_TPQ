@@ -1,13 +1,19 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import PageBreadcrumb from "@/components/common/PageBreadCrumb";
 import ComponentCard from "@/components/common/ComponentCard";
 import { getAbsensiSantri, saveAbsensiSantri } from "@/services/absensi";
-import { AbsensiSantriItem } from "@/types/absensi";
+import { AbsensiSantriItem, AttendanceStatus } from "@/types/absensi";
 import Toast from "@/components/ui/toast/Toast";
 import { useToast } from "@/hooks/useToast";
-import { Table, TableBody, TableCell, TableHeader, TableRow } from "@/components/ui/table";
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHeader,
+    TableRow,
+} from "@/components/ui/table";
 import { useRouter } from "next/navigation";
 import DatePicker from "@/components/form/date-picker";
 
@@ -20,82 +26,71 @@ const getTodayLocal = () => {
     return `${year}-${month}-${day}`;
 };
 
-export default function AbsensiPage() {
+type AbsensiRow = AbsensiSantriItem & {
+    status: AttendanceStatus;
+    note?: string | null;
+};
 
-    const [tanggal, setTanggal] = useState(getTodayLocal());
-    const [data, setData] = useState<AbsensiSantriItem[]>([]);
+export default function AbsensiPage() {
+    const [attendanceDate, setAttendanceDate] = useState(getTodayLocal());
+    const [data, setData] = useState<AbsensiRow[]>([]);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
-    const router = useRouter();
     const [isEditing, setIsEditing] = useState(false);
     const [hasAbsensi, setHasAbsensi] = useState(false);
 
+    const router = useRouter();
     const { toast, showToast, hideToast } = useToast();
 
-    const loadAbsensi = async () => {
+    const loadAbsensi = useCallback(async () => {
         try {
             setLoading(true);
-            const res = await getAbsensiSantri(tanggal);
-            const absensiData = res.data ?? [];
 
-            setData(absensiData);
+            const res = await getAbsensiSantri(attendanceDate);
+            const students = res.students ?? [];
 
-            const sudahAdaAbsensi = absensiData.some(
-                (item: AbsensiSantriItem) => item.tanggal !== null
+            const rows: AbsensiRow[] = students.map((item) => ({
+                ...item,
+                status: item.attendance?.status ?? "present",
+                note: item.attendance?.note ?? "",
+            }));
+
+            setData(rows);
+
+            const alreadyHasAttendance = students.some(
+                (item) => item.attendance !== null
             );
 
-            setHasAbsensi(sudahAdaAbsensi);
-            setIsEditing(!sudahAdaAbsensi);
+            setHasAbsensi(alreadyHasAttendance);
+            setIsEditing(!alreadyHasAttendance);
         } catch (error) {
             console.error(error);
             showToast("Gagal mengambil data absensi", "error");
         } finally {
             setLoading(false);
         }
-    };
+    }, [attendanceDate, showToast]);
 
     useEffect(() => {
-        const fetchAbsensi = async () => {
-            try {
-                setLoading(true);
+        const timeout = window.setTimeout(() => {
+            loadAbsensi();
+        }, 0);
 
-                const res = await getAbsensiSantri(tanggal);
-                const absensiData = res.data ?? [];
+        return () => window.clearTimeout(timeout);
+    }, [loadAbsensi]);
 
-                setData(absensiData);
-
-                const sudahAdaAbsensi = absensiData.some(
-                    (item: AbsensiSantriItem) => item.tanggal !== null
-                );
-
-                setHasAbsensi(sudahAdaAbsensi);
-                setIsEditing(!sudahAdaAbsensi);
-            } catch (error) {
-                console.error(error);
-                showToast("Gagal mengambil data absensi", "error");
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchAbsensi();
-    }, [showToast, tanggal]);
-
-    const updateStatus = (
-        santriId: number,
-        status: "hadir" | "izin" | "sakit" | "alpa"
-    ) => {
+    const updateStatus = (studentId: number, status: AttendanceStatus) => {
         setData((prev) =>
             prev.map((item) =>
-                item.santri_id === santriId ? { ...item, status } : item
+                item.id === studentId ? { ...item, status } : item
             )
         );
     };
 
-    const updateKeterangan = (santriId: number, keterangan: string) => {
+    const updateNote = (studentId: number, note: string) => {
         setData((prev) =>
             prev.map((item) =>
-                item.santri_id === santriId ? { ...item, keterangan } : item
+                item.id === studentId ? { ...item, note } : item
             )
         );
     };
@@ -104,42 +99,33 @@ export default function AbsensiPage() {
         try {
             setSaving(true);
 
-            console.log({
-                tanggal,
-                absensi: data.map((item) => ({
-                    santri_id: item.santri_id,
-                    status: item.status,
-                    keterangan: item.keterangan,
-                })),
-            });
-
             await saveAbsensiSantri({
-                tanggal,
-                absensi: data.map((item) => ({
-                    santri_id: item.santri_id,
-                    status: item.status ?? "hadir",
-                    keterangan: item.keterangan?.trim() ? item.keterangan : null,
+                attendance_date: attendanceDate,
+                attendances: data.map((item) => ({
+                    student_id: item.id,
+                    status: item.status ?? "present",
+                    note: item.note?.trim() ? item.note : null,
                 })),
             });
 
             showToast("Absensi berhasil disimpan", "success");
             setHasAbsensi(true);
             setIsEditing(false);
-            loadAbsensi();
+            await loadAbsensi();
         } catch (error: unknown) {
             const err = error as {
                 response?: {
                     data?: {
                         message?: string;
-                        errors?: Record<string, string[]>;
                     };
                 };
+                message?: string;
             };
 
-            console.log("ERROR FULL:", err.response?.data);
-
             showToast(
-                err.response?.data?.message || "Gagal menyimpan absensi",
+                err.response?.data?.message ||
+                    err.message ||
+                    "Gagal menyimpan absensi",
                 "error"
             );
         } finally {
@@ -154,15 +140,15 @@ export default function AbsensiPage() {
             <ComponentCard
                 title="Form Absensi Santri"
                 action={
-                    <div className="w-52">
+                    <div className="w-full sm:w-52">
                         <DatePicker
-                            key={tanggal}
-                            id="tanggal-absensi"
+                            key={attendanceDate}
+                            id="attendance-date"
                             placeholder="Pilih tanggal"
-                            defaultDate={tanggal}
+                            defaultDate={attendanceDate}
                             useTodayDefault
                             onChange={(_, currentDateString) => {
-                                setTanggal(currentDateString || getTodayLocal());
+                                setAttendanceDate(currentDateString || getTodayLocal());
                             }}
                         />
                     </div>
@@ -180,48 +166,61 @@ export default function AbsensiPage() {
                             <Table>
                                 <TableHeader className="border-b border-brand-300 bg-brand-100">
                                     <TableRow>
-                                        {["No", "Nama Santri", "Status", "Keterangan"].map((h) => (
-                                            <TableCell key={h} isHeader className="px-4 py-3 font-semibold text-black text-start text-theme-xs dark:text-gray-400">
-                                                {h}
-                                            </TableCell>
-                                        ))}
+                                        {["No", "Nama Santri", "Kelas", "Status", "Keterangan"].map(
+                                            (h) => (
+                                                <TableCell
+                                                    key={h}
+                                                    isHeader
+                                                    className="px-4 py-3 font-semibold text-black text-start text-theme-xs dark:text-gray-400"
+                                                >
+                                                    {h}
+                                                </TableCell>
+                                            )
+                                        )}
                                     </TableRow>
                                 </TableHeader>
 
                                 <TableBody className="divide-y divide-gray-100 dark:divide-white/5">
                                     {data.map((item, index) => (
-                                        <TableRow key={item.santri_id}>
-                                            <TableCell className="px-4 py-3 text-gray-500 text-theme-sm dark:text-gray-400">{index + 1}</TableCell>
-                                            <TableCell className="px-4 py-3 text-gray-500 text-theme-sm dark:text-gray-400 capitalize">{item.nama}</TableCell>
+                                        <TableRow key={item.id}>
+                                            <TableCell className="px-4 py-3 text-gray-500 text-theme-sm dark:text-gray-400">
+                                                {index + 1}
+                                            </TableCell>
+
+                                            <TableCell className="px-4 py-3 text-gray-500 text-theme-sm dark:text-gray-400 capitalize">
+                                                {item.name}
+                                            </TableCell>
+
+                                            <TableCell className="px-4 py-3 text-gray-500 text-theme-sm dark:text-gray-400">
+                                                {item.study_class?.name || "-"}
+                                            </TableCell>
+
                                             <TableCell className="px-4 py-3 text-gray-500 text-theme-sm dark:text-gray-400">
                                                 <select
                                                     value={item.status}
                                                     disabled={hasAbsensi && !isEditing}
                                                     onChange={(e) =>
                                                         updateStatus(
-                                                            item.santri_id,
-                                                            e.target.value as
-                                                            | "hadir"
-                                                            | "izin"
-                                                            | "sakit"
-                                                            | "alpa"
+                                                            item.id,
+                                                            e.target.value as AttendanceStatus
                                                         )
                                                     }
                                                     className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
                                                 >
-                                                    <option value="hadir">Hadir</option>
-                                                    <option value="izin">Izin</option>
-                                                    <option value="sakit">Sakit</option>
-                                                    <option value="alpa">Alpa</option>
+                                                    <option value="present">Hadir</option>
+                                                    <option value="permission">Izin</option>
+                                                    <option value="sick">Sakit</option>
+                                                    <option value="absent">Alpa</option>
                                                 </select>
                                             </TableCell>
+
                                             <TableCell className="px-4 py-3 text-gray-500 text-theme-sm dark:text-gray-400">
                                                 <input
                                                     type="text"
-                                                    value={item.keterangan ?? ""}
+                                                    value={item.note ?? ""}
                                                     disabled={hasAbsensi && !isEditing}
                                                     onChange={(e) =>
-                                                        updateKeterangan(item.santri_id, e.target.value)
+                                                        updateNote(item.id, e.target.value)
                                                     }
                                                     placeholder="Opsional"
                                                     className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
@@ -233,10 +232,10 @@ export default function AbsensiPage() {
                             </Table>
                         </div>
 
-                        <div className="mt-5 flex justify-end gap-3">
+                        <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:justify-end">
                             <button
                                 onClick={() => router.push("/absensi/riwayat")}
-                                className="rounded-lg bg-gray-100 px-6 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-200"
+                                className="w-full rounded-lg bg-gray-100 px-6 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-200 sm:w-auto"
                             >
                                 Riwayat Absensi
                             </button>
@@ -244,7 +243,7 @@ export default function AbsensiPage() {
                             {hasAbsensi && !isEditing ? (
                                 <button
                                     onClick={() => setIsEditing(true)}
-                                    className="rounded-lg bg-yellow-500 px-6 py-2.5 text-sm font-medium text-white hover:bg-yellow-600"
+                                    className="w-full rounded-lg bg-yellow-500 px-6 py-2.5 text-sm font-medium text-white hover:bg-yellow-600 sm:w-auto"
                                 >
                                     Edit Absensi
                                 </button>
@@ -252,21 +251,27 @@ export default function AbsensiPage() {
                                 <button
                                     onClick={handleSave}
                                     disabled={saving}
-                                    className="rounded-lg bg-brand-500 px-6 py-2.5 text-sm font-medium text-white hover:bg-brand-600 disabled:opacity-70"
+                                    className="w-full rounded-lg bg-brand-500 px-6 py-2.5 text-sm font-medium text-white hover:bg-brand-600 disabled:opacity-70 sm:w-auto"
                                 >
-                                    {saving ? "Menyimpan..." : hasAbsensi ? "Update Absensi" : "Simpan Absensi"}
+                                    {saving
+                                        ? "Menyimpan..."
+                                        : hasAbsensi
+                                        ? "Update Absensi"
+                                        : "Simpan Absensi"}
                                 </button>
                             )}
                         </div>
                     </>
                 )}
-            </ComponentCard >
+            </ComponentCard>
 
-            {
-                toast.show && (
-                    <Toast message={toast.message} type={toast.type} onClose={hideToast} />
-                )
-            }
+            {toast.show && (
+                <Toast
+                    message={toast.message}
+                    type={toast.type}
+                    onClose={hideToast}
+                />
+            )}
         </>
     );
 }

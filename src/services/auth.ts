@@ -9,14 +9,14 @@ export async function getUser() {
     return res.data;
 }
 
-export async function login(email: string, password: string) {
+export async function login(username: string, password: string) {
     const res = await fetch(`${API_URL}/login`, {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
             Accept: "application/json",
         },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ username, password }),
     });
 
     const data = await res.json();

@@ -8,7 +8,7 @@ export async function GET(req: Request) {
         return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
-    if (!["admin", "guru"].includes(user.role || "")) {
+    if (!["admin", "teacher"].includes(user.role || "")) {
         return NextResponse.json({ message: "Forbidden" }, { status: 403 });
     }
 

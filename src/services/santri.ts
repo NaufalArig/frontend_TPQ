@@ -11,6 +11,45 @@ function getToken() {
         ?.split("=")[1];
 }
 
+function buildSantriFormData(data: SantriFormData) {
+    const formData = new FormData();
+
+    Object.entries(data).forEach(([key, value]) => {
+        if (value === null || value === undefined || value === "") {
+            return;
+        }
+
+        if (key === "join_date") {
+            return;
+        }
+
+        if (
+            ["photo", "family_card_file", "birth_certificate_file"].includes(key) &&
+            !(value instanceof File)
+        ) {
+            return;
+        }
+
+        formData.append(key, value as string | Blob);
+    });
+
+    return formData;
+}
+
+async function handleResponse(res: Response, fallbackMessage: string) {
+    const result = await res.json();
+
+    if (!res.ok) {
+        if (result.errors) {
+            throw new Error(JSON.stringify(result.errors));
+        }
+
+        throw new Error(result.message || fallbackMessage);
+    }
+
+    return result;
+}
+
 export async function getSantriById(id: string | number) {
     const token = getToken();
 
@@ -21,11 +60,7 @@ export async function getSantriById(id: string | number) {
         },
     });
 
-    if (!res.ok) {
-        throw new Error("Gagal mengambil data santri");
-    }
-
-    return res.json();
+    return handleResponse(res, "Gagal mengambil data santri");
 }
 
 export async function getSantri() {
@@ -38,26 +73,9 @@ export async function getSantri() {
         },
     });
 
-    if (!res.ok) {
-        throw new Error("Gagal mengambil data santri");
-    }
-
-    return res.json();
+    return handleResponse(res, "Gagal mengambil data santri");
 }
 
-function buildSantriFormData(data: SantriFormData) {
-    const formData = new FormData();
-
-    Object.entries(data).forEach(([key, value]) => {
-        if (value !== null && value !== undefined && value !== "") {
-            formData.append(key, value as string | Blob);
-        }
-    });
-
-    return formData;
-}
-
-//Function Tambah Santri
 export async function createSantri(data: SantriFormData) {
     const token = Cookies.get("token");
     const formData = buildSantriFormData(data);
@@ -71,20 +89,10 @@ export async function createSantri(data: SantriFormData) {
         body: formData,
     });
 
-    const result = await res.json();
-
-    if (!res.ok) {
-        throw new Error(result.message || JSON.stringify(result));
-    }
-
-    return result;
+    return handleResponse(res, "Gagal menambahkan data santri");
 }
 
-//Function Edit Santri
-export async function updateSantri(
-    id: string | number,
-    data: SantriFormData
-) {
+export async function updateSantri(id: string | number, data: SantriFormData) {
     const token = getToken();
     const formData = buildSantriFormData(data);
 
@@ -99,13 +107,7 @@ export async function updateSantri(
         body: formData,
     });
 
-    const result = await res.json();
-
-    if (!res.ok) {
-        throw new Error(JSON.stringify(result.errors || result));
-    }
-
-    return result;
+    return handleResponse(res, "Gagal memperbarui data santri");
 }
 
 export async function deleteSantri(id: number) {
@@ -119,9 +121,5 @@ export async function deleteSantri(id: number) {
         },
     });
 
-    if (!res.ok) {
-        throw new Error("Gagal menghapus santri");
-    }
-
-    return res.json();
+    return handleResponse(res, "Gagal menghapus santri");
 }

@@ -6,22 +6,27 @@ import SantriTable from "./components/SantriTable";
 import Link from "next/link";
 import RoleGuard from "@/components/RoleGuard";
 import { useState } from "react";
+import DataExchangeButtons from "@/components/data-exchange/DataExchangeButtons";
 
 export default function SantriPage() {
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
 
   return (
-    <RoleGuard allow={["admin", "guru"]}>
+    <RoleGuard allow={["admin", "teacher"]}>
       <div>
         <PageBreadcrumb pageTitle="Menu Santri" />
         <div className="space-y-6">
-          <div className="flex justify-between items-center mb-6">
+          <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <Link
               href="/santri/create"
-              className="bg-brand-600 text-white px-4 py-2 rounded-lg hover:bg-brand-500"
+              className="w-full rounded-lg bg-brand-600 px-4 py-2 text-center text-sm font-medium text-white hover:bg-brand-500 sm:w-auto"
             >Tambah Santri
             </Link>
+            <DataExchangeButtons
+              module="santri"
+              fileName="data-santri.xlsx"
+              label="Santri"
+            />
           </div>
           <ComponentCard
             title="Daftar Tabel Santri"
@@ -53,22 +58,10 @@ export default function SantriPage() {
                     className="w-full rounded-lg border border-brand-300 hover:bg-brand-100 bg-transparent px-4 py-2.5 pl-12 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-500 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 sm:w-44"
                   />
                 </div>
-
-                <select
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                  className="w-full rounded-lg border border-brand-300 hover:bg-brand-100 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-500 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 sm:w-44"
-                >
-                  <option value="">Semua Status</option>
-                  <option value="pending">Pending</option>
-                  <option value="aktif">Aktif</option>
-                  <option value="lulus">Lulus</option>
-                  <option value="keluar">Keluar</option>
-                </select>
               </div>
             }
           >
-            <SantriTable search={search} statusFilter={statusFilter} />
+            <SantriTable search={search} />
           </ComponentCard>
         </div>
       </div>

@@ -6,7 +6,7 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useSidebar } from "@/context/SidebarContext";
 import { useUser } from "@/context/UserContext";
-import { BoxCubeIcon, GridIcon, ListIcon, UserCircleIcon, UserIcon } from "@/icons";
+import { BoxCubeIcon, GridIcon, ListIcon, UserCircleIcon, UserIcon, TaskIcon, DollarLineIcon } from "@/icons";
 import { GroupIcon } from "lucide-react";
 
 type NavItem = {
@@ -32,20 +32,26 @@ const AppSidebar: React.FC = () => {
           { icon: <GridIcon />, name: "Dashboard", path: "/dashboard" },
           { icon: <UserCircleIcon />, name: "Santri", path: "/santri" },
           { icon: <ListIcon />, name: "Guru", path: "/guru" },
-          { icon: <BoxCubeIcon />, name: "Keuangan", path: "/keuangan" },
+          { icon: <TaskIcon />, name: "Kategori Keuangan", path: "/kategori-keuangan", },
+          { icon: <DollarLineIcon />, name: "Keuangan SPP", path: "/keuangan-spp" },
+          { icon: <DollarLineIcon />, name: "Keuangan Pembangunan", path: "/keuangan-pembangunan" },
           { icon: <UserIcon />, name: "User", path: "/users" },
-          { icon: <GroupIcon />, name: "Absensi", path: "/absensi" },
+          { icon: <ListIcon />, name: "Absensi", path: "/absensi" },
+          { icon: <GridIcon />, name: "Kelas", path: "/kelas", },
+          { icon: <BoxCubeIcon />, name: "Aset", path: "/aset" },
+          { icon: <TaskIcon />, name: "Activity Log", path: "/activity-logs" },
         ];
-      case "guru":
+      case "teacher":
         return [
           { icon: <GridIcon />, name: "Dashboard", path: "/dashboard" },
           { icon: <UserCircleIcon />, name: "Santri", path: "/santri" },
           { icon: <GroupIcon />, name: "Absensi", path: "/absensi" },
         ];
-      case "bendahara":
+      case "treasurer":
         return [
           { icon: <GridIcon />, name: "Dashboard", path: "/dashboard" },
-          { icon: <BoxCubeIcon />, name: "Keuangan", path: "/keuangan" },
+          { icon: <DollarLineIcon />, name: "Keuangan SPP", path: "/keuangan-spp" },
+          { icon: <DollarLineIcon />, name: "Keuangan Pembangunan", path: "/keuangan-pembangunan" },
         ];
       default:
         return [];

@@ -3,10 +3,11 @@
 import NotificationDropdown from "@/components/header/NotificationDropdown";
 import UserDropdown from "@/components/header/UserDropdown";
 import { useSidebar } from "@/context/SidebarContext";
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 
 const AppHeader: React.FC = () => {
   const { isMobileOpen, toggleSidebar, toggleMobileSidebar } = useSidebar();
+  const [openDropdown, setOpenDropdown] = useState<"notification" | "profile" | null>(null);
 
   const handleToggle = () => {
     if (window.innerWidth >= 1280) {
@@ -31,10 +32,10 @@ const AppHeader: React.FC = () => {
 
   return (
     <header className="sticky top-0 z-40 w-full bg-white border-b border-brand-300">
-      <div className="flex items-center justify-between px-4 py-3 xl:px-6">
+      <div className="flex min-w-0 items-center justify-between gap-3 px-4 py-3 xl:px-6">
         {/* Toggle Button — selalu tampil */}
         <button
-          className="flex items-center justify-center w-10 h-10 rounded-lg border border-brand-300 bg-brand-200 hover:bg-brand-100 text-gray-600 hover:text-gray-900 transition-colors"
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-brand-300 bg-brand-200 text-gray-600 transition-colors hover:bg-brand-100 hover:text-gray-900"
           onClick={handleToggle}
           aria-label="Toggle Sidebar"
         >
@@ -59,9 +60,25 @@ const AppHeader: React.FC = () => {
           )}
         </button>
 
-        <div className="flex items-center gap-2 sm:gap-3">
-          <NotificationDropdown />
-          <UserDropdown />
+        <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+          <NotificationDropdown
+            isOpen={openDropdown === "notification"}
+            onToggle={() =>
+              setOpenDropdown((current) =>
+                current === "notification" ? null : "notification"
+              )
+            }
+            onClose={() => setOpenDropdown(null)}
+          />
+          <UserDropdown
+            isOpen={openDropdown === "profile"}
+            onToggle={() =>
+              setOpenDropdown((current) =>
+                current === "profile" ? null : "profile"
+              )
+            }
+            onClose={() => setOpenDropdown(null)}
+          />
         </div>
       </div>
     </header>

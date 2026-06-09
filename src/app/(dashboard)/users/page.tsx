@@ -6,22 +6,27 @@ import UserTable from "./components/UserTable";
 import Link from "next/link";
 import RoleGuard from "@/components/RoleGuard";
 import { useState } from "react";
+import DataExchangeButtons from "@/components/data-exchange/DataExchangeButtons";
 
 export default function UsersPage() {
     const [search, setSearch] = useState("");
-    const [roleFilter, setRoleFilter] = useState("");
 
     return (
         <RoleGuard allow={["admin"]}>
             <div>
                 <PageBreadcrumb pageTitle="Menu Users" />
                 <div className="space-y-6">
-                    <div className="flex justify-between items-center mb-6">
+                    <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                         <Link
                             href="/users/create"
-                            className="bg-brand-600 text-white px-4 py-2 rounded-lg hover:bg-brand-500"
+                            className="w-full rounded-lg bg-brand-600 px-4 py-2 text-center text-sm font-medium text-white hover:bg-brand-500 sm:w-auto"
                         >Tambah User
                         </Link>
+                        <DataExchangeButtons
+                            module="users"
+                            fileName="data-users.xlsx"
+                            label="User"
+                        />
                     </div>
                     <ComponentCard
                         title="Daftar Tabel User"
@@ -53,23 +58,11 @@ export default function UsersPage() {
                                         className="w-full rounded-lg border border-brand-300 hover:bg-brand-100 bg-transparent px-4 py-2.5 pl-12 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-500 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 sm:w-44"
                                     />
                                 </div>
-
-                                <select
-                                    value={roleFilter}
-                                    onChange={(e) => setRoleFilter(e.target.value)}
-                                    className="w-full rounded-lg border border-brand-300 hover:bg-brand-100 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-500 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 sm:w-44"
-                                >
-                                    <option value="">Semua Role</option>
-                                    <option value="admin">Admin</option>
-                                    <option value="guru">Guru</option>
-                                    <option value="bendahara">Bendahara</option>
-                                </select>
                             </div>
                         }
                     >
                         <UserTable
                             search={search}
-                            roleFilter={roleFilter}
                         />
                     </ComponentCard>
                 </div>

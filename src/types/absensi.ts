@@ -1,38 +1,65 @@
+export type AttendanceStatus = "present" | "permission" | "sick" | "absent";
+
 export type AbsensiSantriItem = {
-    santri_id: number;
-    nama: string;
-    tanggal: string | null;
-    status: "hadir" | "izin" | "sakit" | "alpa";
-    keterangan?: string | null;
+    id: number;
+    name: string;
+    nisn?: string | null;
+    student_number?: string | null;
+
+    study_class?: {
+        id: number;
+        name: string;
+    } | null;
+
+    attendance?: {
+        id: number;
+        student_id: number;
+        user_id?: number | null;
+        attendance_date: string;
+        status: AttendanceStatus;
+        note?: string | null;
+    } | null;
 };
 
 export type AbsensiSantriResponse = {
-    tanggal: string;
-    data: AbsensiSantriItem[];
+    attendance_date: string;
+    students: AbsensiSantriItem[];
 };
 
 export type AbsensiSubmitData = {
-    tanggal: string;
-    absensi: {
-        santri_id: number;
-        status: "hadir" | "izin" | "sakit" | "alpa";
-        keterangan?: string | null;
+    attendance_date: string;
+    attendances: {
+        student_id: number;
+        status: AttendanceStatus;
+        note?: string | null;
     }[];
 };
 
 export type RiwayatAbsensiItem = {
     id: number;
-    santri_id: number;
+    student_id: number;
     user_id: number | null;
-    tanggal: string;
-    status: "hadir" | "izin" | "sakit" | "alpa";
-    keterangan: string | null;
-    santri?: {
+
+    attendance_date: string;
+    status: AttendanceStatus;
+    note: string | null;
+
+    student?: {
         id: number;
-        nama: string;
-    };
+        name: string;
+        nisn?: string | null;
+        study_class?: {
+            id: number;
+            name: string;
+        } | null;
+    } | null;
+
     user?: {
         id: number;
         name: string;
-    };
+        username?: string;
+    } | null;
+
+    created_at?: string;
+    updated_at?: string;
 };

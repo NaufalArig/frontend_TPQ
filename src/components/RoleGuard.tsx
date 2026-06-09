@@ -1,11 +1,12 @@
 "use client";
 
 import { useUser } from "@/context/UserContext";
+import { UserRole } from "@/types/user";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
 type Props = {
-  allow: string[];
+  allow: UserRole[];
   children: React.ReactNode;
 };
 
@@ -14,15 +15,15 @@ export default function RoleGuard({ allow, children }: Props) {
   const router = useRouter();
 
   useEffect(() => {
-    if (!loading) {
-      if (!user) {
-        router.replace("/auth/login");
-        return;
-      }
+    if (loading) return;
 
-      if (!allow.includes(user.role || "")) {
-        router.replace("/unauthorized");
-      }
+    if (!user) {
+      router.replace("/login");
+      return;
+    }
+
+    if (!allow.includes(user.role)) {
+      router.replace("/unauthorized");
     }
   }, [user, loading, allow, router]);
 
@@ -30,7 +31,7 @@ export default function RoleGuard({ allow, children }: Props) {
 
   if (!user) return null;
 
-  if (!allow.includes(user.role || "")) return null;
+  if (!allow.includes(user.role)) return null;
 
   return <>{children}</>;
 }

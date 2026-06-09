@@ -18,13 +18,15 @@ type Props = {
 export default function UserForm({ initialData, onSubmit, onSuccess }: Props) {
     const [form, setForm] = useState<UserFormData>({
         name: initialData?.name || "",
+        username: initialData?.username || "",
         email: initialData?.email || "",
         password: "",
         role: initialData?.role || "",
+        status: initialData?.status || "active",
     });
+
     const router = useRouter();
     const { toast, showToast, hideToast } = useToast();
-
     const [loading, setLoading] = useState(false);
 
     const update = (field: keyof UserFormData, value: string) => {
@@ -39,8 +41,8 @@ export default function UserForm({ initialData, onSubmit, onSuccess }: Props) {
             return;
         }
 
-        if (!form.email.trim()) {
-            showToast("Email wajib diisi", "error");
+        if (!form.username.trim()) {
+            showToast("Username wajib diisi", "error");
             return;
         }
 
@@ -51,6 +53,11 @@ export default function UserForm({ initialData, onSubmit, onSuccess }: Props) {
 
         if (!form.role) {
             showToast("Role wajib dipilih", "error");
+            return;
+        }
+
+        if (!form.status) {
+            showToast("Status wajib dipilih", "error");
             return;
         }
 
@@ -96,10 +103,22 @@ export default function UserForm({ initialData, onSubmit, onSuccess }: Props) {
             </div>
 
             <div>
-                <Label>Email</Label>
+                <Label>Username</Label>
+                <Input
+                    type="text"
+                    value={form.username}
+                    placeholder="Masukkan username"
+                    onChange={(e) => update("username", e.target.value)}
+                />
+            </div>
+
+            <div>
+                <Label>
+                    Email <span className="text-gray-400">(opsional)</span>
+                </Label>
                 <Input
                     type="email"
-                    value={form.email}
+                    value={form.email || ""}
                     placeholder="user@email.com"
                     onChange={(e) => update("email", e.target.value)}
                 />
@@ -107,7 +126,12 @@ export default function UserForm({ initialData, onSubmit, onSuccess }: Props) {
 
             <div>
                 <Label>
-                    Password {initialData && <span className="text-gray-400">(kosongkan jika tidak diganti)</span>}
+                    Password{" "}
+                    {initialData && (
+                        <span className="text-gray-400">
+                            (kosongkan jika tidak diganti)
+                        </span>
+                    )}
                 </Label>
                 <Input
                     type="password"
@@ -124,10 +148,23 @@ export default function UserForm({ initialData, onSubmit, onSuccess }: Props) {
                     onChange={(e) => update("role", e.target.value)}
                     className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm"
                 >
-                    <option value="">Pilih role</option>
+                    <option value="">Pilih Role</option>
                     <option value="admin">Admin</option>
-                    <option value="guru">Guru</option>
-                    <option value="bendahara">Bendahara</option>
+                    <option value="teacher">Guru</option>
+                    <option value="treasurer">Bendahara</option>
+                </select>
+            </div>
+
+            <div>
+                <Label>Status</Label>
+                <select
+                    value={form.status}
+                    onChange={(e) => update("status", e.target.value)}
+                    className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm"
+                >
+                    <option value="">Pilih Status</option>
+                    <option value="active">Aktif</option>
+                    <option value="inactive">Nonaktif</option>
                 </select>
             </div>
 
@@ -139,6 +176,7 @@ export default function UserForm({ initialData, onSubmit, onSuccess }: Props) {
                 >
                     {loading ? "Menyimpan..." : "Simpan"}
                 </button>
+
                 <button
                     type="button"
                     onClick={() => router.push("/users")}
@@ -147,6 +185,7 @@ export default function UserForm({ initialData, onSubmit, onSuccess }: Props) {
                     Batal
                 </button>
             </div>
+
             {toast.show && (
                 <Toast
                     message={toast.message}

@@ -14,7 +14,7 @@ import { useToast } from "@/hooks/useToast";
 export default function LoginPage() {
     const [showPassword, setShowPassword] = useState(false);
     const [isChecked, setIsChecked] = useState(false);
-    const [email, setEmail] = useState("");
+    const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
     const [loading, setLoading] = useState(false);
     const [showSuccess, setShowSuccess] = useState(false);
@@ -23,8 +23,8 @@ export default function LoginPage() {
     const handleLogin = async (e: React.SyntheticEvent<HTMLFormElement>) => {
         e.preventDefault();
 
-        if (!email.trim()) {
-            showToast("Email wajib diisi", "error");
+        if (!username.trim()) {
+            showToast("Username wajib diisi", "error");
             return;
         }
 
@@ -36,7 +36,7 @@ export default function LoginPage() {
         setLoading(true);
 
         try {
-            const res = await login(email, password);
+            const res = await login(username, password);
 
             localStorage.clear();
             Cookies.remove("token");
@@ -52,7 +52,7 @@ export default function LoginPage() {
             if (err instanceof Error) {
                 showToast(err.message, "error");
             } else {
-                showToast("Email atau password salah", "error");
+                showToast("Username atau password salah", "error");
             }
         } finally {
             setLoading(false);
@@ -92,7 +92,7 @@ export default function LoginPage() {
                             Masuk Berhasil!
                         </h3>
                         <p className="text-sm text-gray-500 mb-5">
-                            Selamat datang kembali, <span className="font-semibold text-gray-700 capitalize">{email}</span>
+                            Selamat datang kembali, <span className="font-semibold text-gray-700 capitalize">{username}</span>
                         </p>
 
                         <div className="w-48 h-1.5 bg-gray-100 rounded-full overflow-hidden">
@@ -111,7 +111,7 @@ export default function LoginPage() {
                                 Masuk
                             </h1>
                             <p className="text-sm text-gray-500 dark:text-gray-400">
-                                Masukan email kamu dan kata sandi kamu!
+                                Masukkan username dan kata sandi kamu!
                             </p>
                         </div>
 
@@ -121,12 +121,12 @@ export default function LoginPage() {
                         >
                             <div className="space-y-6">
                                 <div>
-                                    <Label>Email<span className="text-error-500">*</span></Label>
+                                    <Label>Username<span className="text-error-500">*</span></Label>
                                     <Input
-                                        placeholder="user@gmail.com"
-                                        type="email"
-                                        value={email}
-                                        onChange={(e) => setEmail(e.target.value)}
+                                        placeholder="Masukkan username"
+                                        type="text"
+                                        value={username}
+                                        onChange={(e) => setUsername(e.target.value)}
                                     />
                                 </div>
                                 <div>

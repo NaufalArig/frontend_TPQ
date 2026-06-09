@@ -7,24 +7,46 @@ import { Dropdown } from "../ui/dropdown/Dropdown";
 import { DropdownItem } from "../ui/dropdown/DropdownItem";
 import { useUser } from "@/context/UserContext";
 import { logout } from "@/services/auth";
-import { Icon } from "lucide-react";
+import { DEFAULT_USER_PHOTO, getStorageUrl } from "@/lib/storage";
 
-export default function UserDropdown() {
-  const [isOpen, setIsOpen] = useState(false);
+type Props = {
+  isOpen?: boolean;
+  onToggle?: () => void;
+  onClose?: () => void;
+};
+
+export default function UserDropdown({
+  isOpen: controlledIsOpen,
+  onToggle,
+  onClose,
+}: Props) {
+  const [localIsOpen, setLocalIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [showLogoutSuccess, setShowLogoutSuccess] = useState(false);
 
   const router = useRouter();
   const { user, setUser } = useUser();
+  const isOpen = controlledIsOpen ?? localIsOpen;
+  const photoUrl = getStorageUrl(user?.photo);
 
   function toggleDropdown(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
     e.stopPropagation();
-    setIsOpen((prev) => !prev);
+    if (onToggle) {
+      onToggle();
+      return;
+    }
+
+    setLocalIsOpen((prev) => !prev);
   }
 
   function closeDropdown() {
-    setIsOpen(false);
+    if (onClose) {
+      onClose();
+      return;
+    }
+
+    setLocalIsOpen(false);
   }
 
   function handleLogoutClick() {
@@ -153,21 +175,25 @@ export default function UserDropdown() {
       <div className="relative">
         <button
           onClick={toggleDropdown}
-          className="flex items-center text-gray-700 dropdown-toggle border border-brand-300 rounded-4xl bg-brand-200 hover:bg-brand-100"
+          className="dropdown-toggle flex h-10 max-w-[52vw] shrink-0 items-center rounded-full border border-brand-300 bg-brand-200 text-gray-700 hover:bg-brand-100 sm:h-11 sm:max-w-none"
+          aria-label="Buka menu profil"
         >
-          <span className="ml-1 overflow-hidden rounded-full h-11 w-11 p-1">
+          <span className="ml-1 h-9 w-9 shrink-0 overflow-hidden rounded-full p-1 sm:h-11 sm:w-11">
             <Image
             width={44}
             height={44}
-            src="/images/user/admin.png"
+            src={photoUrl}
             alt="User"
+            onError={(event) => {
+              event.currentTarget.src = DEFAULT_USER_PHOTO;
+            }}
           />
           </span>
-          <span className="block font-medium text-theme-sm p-1">
+          <span className="hidden max-w-32 truncate p-1 text-theme-sm font-medium sm:block lg:max-w-44">
             {user?.name || "User"}
           </span>
           <svg
-            className={`stroke-gray-500 transition-transform duration-200 ${isOpen ? "rotate-180" : ""} mr-2`}
+            className={`mr-2 hidden stroke-gray-500 transition-transform duration-200 sm:block ${isOpen ? "rotate-180" : ""}`}
             width="18" height="20" viewBox="0 0 18 20" fill="none" xmlns="http://www.w3.org/2000/svg"
           >
             <path d="M4.3125 8.65625L9 13.3437L13.6875 8.65625" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
@@ -177,14 +203,15 @@ export default function UserDropdown() {
         <Dropdown
           isOpen={isOpen}
           onClose={closeDropdown}
-          className="absolute right-0 mt-4 flex w-65 flex-col rounded-2xl border border-gray-200 bg-white p-3 shadow-lg dark:border-gray-800 dark:bg-gray-900"
+          positionClassName="fixed right-4 top-[72px] z-50 sm:absolute sm:right-0 sm:top-auto sm:mt-4"
+          className="flex w-[calc(100vw-2rem)] max-w-65 flex-col rounded-2xl p-3 shadow-lg dark:bg-gray-900 sm:w-65"
         >
           <div>
             <span className="block font-medium text-gray-700 text-theme-sm dark:text-white">
-              {user?.name || "User"}
+              <span className="block truncate">{user?.name || "User"}</span>
             </span>
             <span className="mt-0.5 block text-theme-xs text-gray-500">
-              {user?.email || "-"}
+              <span className="block truncate">{user?.email || "-"}</span>
             </span>
           </div>
 

@@ -10,12 +10,25 @@ import { useRouter } from "next/navigation";
 import { Guru, GuruFormData } from "@/types/guru";
 import Toast from "@/components/ui/toast/Toast";
 import { useToast } from "@/hooks/useToast";
+import API_URL from "@/lib/api";
 
 type Props = {
     initialData?: Guru;
     onSubmit?: (data: GuruFormData) => Promise<void>;
     onSuccess?: (message: string) => void;
 };
+
+const STORAGE_URL = API_URL.replace(/\/api\/?$/, "/storage");
+
+function getPhotoUrl(photo?: string | null) {
+    if (!photo) return null;
+
+    if (photo.startsWith("http://") || photo.startsWith("https://")) {
+        return photo;
+    }
+
+    return `${STORAGE_URL}/${photo}`;
+}
 
 export default function GuruForm({ initialData, onSubmit, onSuccess }: Props) {
     const router = useRouter();
@@ -24,7 +37,7 @@ export default function GuruForm({ initialData, onSubmit, onSuccess }: Props) {
 
     // Foto state
     const [preview, setPreview] = useState<string | null>(
-        initialData?.foto ? `http://127.0.0.1:8000/storage/${initialData.foto}` : null
+        getPhotoUrl(initialData?.photo)
     );
     const [pos, setPos] = useState({ x: 0, y: 0 });
     const [scale, setScale] = useState(1);
@@ -38,15 +51,31 @@ export default function GuruForm({ initialData, onSubmit, onSuccess }: Props) {
     const circleRadius = 60;
 
     const [form, setForm] = useState<GuruFormData>({
-        nama: initialData?.nama || "",
-        alamat: initialData?.alamat || "",
-        kontak: initialData?.kontak || "",
-        tanggal_masuk: initialData?.tanggal_masuk || "", // kosong by default
-        tanggal_keluar: initialData?.tanggal_keluar || "",
-        status: initialData?.status || "pending",
-        foto: null,
+        username: "",
         email: "",
         password: "",
+
+        teacher_number: initialData?.teacher_number || "",
+        tpq_number: initialData?.tpq_number || "",
+        name: initialData?.name || "",
+        gender: initialData?.gender || "",
+        birth_place: initialData?.birth_place || "",
+        birth_date: initialData?.birth_date || "",
+
+        address: initialData?.address || "",
+        village: initialData?.village || "",
+        district: initialData?.district || "",
+        city: initialData?.city || "",
+        province: initialData?.province || "",
+
+        phone: initialData?.phone || "",
+        certificate_from: initialData?.certificate_from || "",
+        certificate_number: initialData?.certificate_number || "",
+        education: initialData?.education || "",
+
+        join_date: initialData?.join_date || "",
+        leave_date: initialData?.leave_date || "",
+        photo: null,
     });
 
     const [loading, setLoading] = useState(false);
@@ -58,19 +87,34 @@ export default function GuruForm({ initialData, onSubmit, onSuccess }: Props) {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        if (!form.nama.trim()) { showToast("Nama guru wajib diisi", "error"); return; }
-        if (!form.tanggal_masuk) { showToast("Tanggal masuk wajib dipilih", "error"); return; }
-        if (!form.kontak.trim()) { showToast("Kontak wajib diisi", "error"); return; }
-        if (!form.alamat.trim()) { showToast("Alamat wajib diisi", "error"); return; }
+        if (!form.name.trim()) {
+            showToast("Nama guru wajib diisi", "error");
+            return;
+        }
+
+        if (!form.join_date) {
+            showToast("Tanggal masuk wajib dipilih", "error");
+            return;
+        }
+
+        if (!initialData && !form.username?.trim()) {
+            showToast("Username login wajib diisi", "error");
+            return;
+        }
+
+        if (!initialData && !form.password?.trim()) {
+            showToast("Password login wajib diisi", "error");
+            return;
+        }
 
         try {
             setLoading(true);
             if (onSubmit) {
                 await onSubmit(form);
-                onSuccess?.(initialData ? `Data ${form.nama} berhasil diperbarui!` : `Guru ${form.nama} berhasil ditambahkan!`);
+                onSuccess?.(initialData ? `Data ${form.name} berhasil diperbarui!` : `Guru ${form.name} berhasil ditambahkan!`);
             } else {
                 await createGuru(form);
-                showToast(`Guru ${form.nama} berhasil ditambahkan!`, "success");
+                showToast(`Guru ${form.name} berhasil ditambahkan!`, "success");
                 setTimeout(() => router.push("/guru"), 1500);
             }
         } catch (error) {
@@ -263,7 +307,7 @@ export default function GuruForm({ initialData, onSubmit, onSuccess }: Props) {
                                 className="hidden"
                                 onChange={(e) => {
                                     const file = e.target.files?.[0] ?? null;
-                                    setForm(prev => ({ ...prev, foto: file }));
+                                    setForm(prev => ({ ...prev, photo: file }));
                                     if (file) {
                                         setPreview(URL.createObjectURL(file));
                                         setPos({ x: 0, y: 0 });
@@ -293,25 +337,37 @@ export default function GuruForm({ initialData, onSubmit, onSuccess }: Props) {
                                 <Label>Nama Guru</Label>
                                 <Input
                                     type="text"
-                                    value={form.nama}
-                                    onChange={(e) => update("nama", e.target.value)}
+                                    value={form.name}
+                                    onChange={(e) => update("name", e.target.value)}
                                 />
                             </div>
                             <div>
                                 <Label>Kontak</Label>
                                 <Input
                                     type="text"
-                                    value={form.kontak}
+                                    value={form.phone}
                                     placeholder="08123456789"
-                                    onChange={(e) => update("kontak", e.target.value)}
+                                    onChange={(e) => update("phone", e.target.value)}
                                 />
                             </div>
                         </div>
 
                         {!initialData && (
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                 <div>
-                                    <Label>Email Login</Label>
+                                    <Label>Username Login</Label>
+                                    <Input
+                                        type="text"
+                                        value={form.username || ""}
+                                        placeholder="contoh: guru_ahmad"
+                                        onChange={(e) => update("username", e.target.value)}
+                                    />
+                                </div>
+
+                                <div>
+                                    <Label>
+                                        Email Login <span className="text-gray-400">(opsional)</span>
+                                    </Label>
                                     <Input
                                         type="email"
                                         value={form.email || ""}
@@ -332,13 +388,147 @@ export default function GuruForm({ initialData, onSubmit, onSuccess }: Props) {
                             </div>
                         )}
 
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <Label>Induk Guru</Label>
+                                <Input
+                                    type="text"
+                                    value={form.teacher_number || ""}
+                                    placeholder="Masukkan induk guru"
+                                    onChange={(e) => update("teacher_number", e.target.value)}
+                                />
+                            </div>
+
+                            <div>
+                                <Label>Induk TPQ</Label>
+                                <Input
+                                    type="text"
+                                    value={form.tpq_number || ""}
+                                    placeholder="Masukkan induk TPQ"
+                                    onChange={(e) => update("tpq_number", e.target.value)}
+                                />
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <Label>Jenis Kelamin</Label>
+                                <select
+                                    value={form.gender || ""}
+                                    onChange={(e) => update("gender", e.target.value)}
+                                    className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm"
+                                >
+                                    <option value="">Pilih jenis kelamin</option>
+                                    <option value="male">Laki-laki</option>
+                                    <option value="female">Perempuan</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <Label>Tempat Lahir</Label>
+                                <Input
+                                    type="text"
+                                    value={form.birth_place || ""}
+                                    placeholder="Contoh: Batam"
+                                    onChange={(e) => update("birth_place", e.target.value)}
+                                />
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <DatePicker
+                                id="tanggal-lahir-guru"
+                                label="Tanggal Lahir"
+                                placeholder="Pilih tanggal lahir"
+                                defaultDate={form.birth_date || undefined}
+                                onChange={(_, val) => update("birth_date", val)}
+                            />
+
+                            <div>
+                                <Label>Kontak</Label>
+                                <Input
+                                    type="text"
+                                    value={form.phone || ""}
+                                    placeholder="08123456789"
+                                    onChange={(e) => update("phone", e.target.value)}
+                                />
+                            </div>
+                        </div>
+
                         <div>
                             <Label>Alamat</Label>
                             <TextArea
-                                value={form.alamat}
-                                onChange={(e) => update("alamat", e)}
+                                value={form.address}
+                                onChange={(e) => update("address", e)}
                                 rows={4}
                             />
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <Label>Desa</Label>
+                                <Input
+                                    type="text"
+                                    value={form.village || ""}
+                                    onChange={(e) => update("village", e.target.value)}
+                                />
+                            </div>
+
+                            <div>
+                                <Label>Kecamatan</Label>
+                                <Input
+                                    type="text"
+                                    value={form.district || ""}
+                                    onChange={(e) => update("district", e.target.value)}
+                                />
+                            </div>
+
+                            <div>
+                                <Label>Kabupaten</Label>
+                                <Input
+                                    type="text"
+                                    value={form.city || ""}
+                                    onChange={(e) => update("city", e.target.value)}
+                                />
+                            </div>
+
+                            <div>
+                                <Label>Provinsi</Label>
+                                <Input
+                                    type="text"
+                                    value={form.province || ""}
+                                    onChange={(e) => update("province", e.target.value)}
+                                />
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div>
+                                <Label>Syahadah Dari</Label>
+                                <Input
+                                    type="text"
+                                    value={form.certificate_from || ""}
+                                    onChange={(e) => update("certificate_from", e.target.value)}
+                                />
+                            </div>
+
+                            <div>
+                                <Label>Nomor Syahadah</Label>
+                                <Input
+                                    type="text"
+                                    value={form.certificate_number || ""}
+                                    onChange={(e) => update("certificate_number", e.target.value)}
+                                />
+                            </div>
+
+                            <div>
+                                <Label>Ijazah</Label>
+                                <Input
+                                    type="text"
+                                    value={form.education || ""}
+                                    onChange={(e) => update("education", e.target.value)}
+                                />
+                            </div>
                         </div>
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -346,8 +536,8 @@ export default function GuruForm({ initialData, onSubmit, onSuccess }: Props) {
                                 id="tanggal-masuk"
                                 label="Tanggal Masuk"
                                 placeholder="Pilih tanggal masuk"
-                                defaultDate={form.tanggal_masuk || undefined}
-                                onChange={(_, val) => update("tanggal_masuk", val)}
+                                defaultDate={form.join_date || undefined}
+                                onChange={(_, val) => update("join_date", val)}
                             />
 
                             {initialData && (
@@ -355,8 +545,8 @@ export default function GuruForm({ initialData, onSubmit, onSuccess }: Props) {
                                     id="tanggal-keluar"
                                     label="Tanggal Keluar"
                                     placeholder="Opsional"
-                                    defaultDate={form.tanggal_keluar || undefined}
-                                    onChange={(_, val) => update("tanggal_keluar", val)}
+                                    defaultDate={form.leave_date || undefined}
+                                    onChange={(_, val) => update("leave_date", val)}
                                 />
                             )}
                         </div>

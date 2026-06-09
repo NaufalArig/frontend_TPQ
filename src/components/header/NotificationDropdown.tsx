@@ -5,18 +5,42 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { Dropdown } from "../ui/dropdown/Dropdown";
 import { DropdownItem } from "../ui/dropdown/DropdownItem";
 import { getNotifications, markAsRead, markAllAsRead } from "@/services/notification";
-import { NotifItem  } from "@/types/notification";
+import { NotifItem } from "@/types/notification";
 
-export default function NotificationDropdown() {
-  const [isOpen, setIsOpen] = useState(false);
-  const [notifications, setNotifications] = useState<NotifItem []>([]);
+type NotificationResponse = {
+  data?: NotifItem[];
+  unread?: number;
+};
+
+type Props = {
+  isOpen?: boolean;
+  onToggle?: () => void;
+  onClose?: () => void;
+};
+
+export default function NotificationDropdown({
+  isOpen: controlledIsOpen,
+  onToggle,
+  onClose,
+}: Props) {
+  const [localIsOpen, setLocalIsOpen] = useState(false);
+  const [notifications, setNotifications] = useState<NotifItem[]>([]);
   const [unread, setUnread] = useState(0);
   const prevUnread = useRef(0);
+  const isOpen = controlledIsOpen ?? localIsOpen;
 
   const loadNotifications = useCallback(async () => {
     try {
-      const res = await getNotifications();
-      const newUnread: number = res.unread;
+      const res = (await getNotifications()) as NotificationResponse | NotifItem[] | undefined;
+      const nextNotifications = Array.isArray(res)
+        ? res
+        : Array.isArray(res?.data)
+          ? res.data
+          : [];
+      const newUnread =
+        !Array.isArray(res) && typeof res?.unread === "number"
+          ? res.unread
+          : nextNotifications.filter((notif) => !notif.is_read).length;
 
       if (newUnread > prevUnread.current && prevUnread.current !== -1) {
         if ("Notification" in window) {
@@ -31,34 +55,49 @@ export default function NotificationDropdown() {
       }
 
       prevUnread.current = newUnread;
-      setNotifications(res.data);
+      setNotifications(nextNotifications);
       setUnread(newUnread);
     } catch (err) {
       console.error("Gagal memuat notifikasi:", err);
+      setNotifications([]);
+      setUnread(0);
     }
   }, []);
 
   useEffect(() => {
     prevUnread.current = -1;
 
-    const fetchData = async () => {
-      await loadNotifications();
-    };
-
-    fetchData();
+    const timeout = window.setTimeout(() => {
+      loadNotifications();
+    }, 0);
 
     const interval = setInterval(() => {
       loadNotifications();
     }, 30000);
 
-    return () => clearInterval(interval);
+    return () => {
+      window.clearTimeout(timeout);
+      clearInterval(interval);
+    };
   }, [loadNotifications]);
 
   const handleOpen = () => {
-    setIsOpen(!isOpen);
+    if (onToggle) {
+      onToggle();
+      return;
+    }
+
+    setLocalIsOpen((prev) => !prev);
   };
 
-  const handleClose = () => setIsOpen(false);
+  const handleClose = () => {
+    if (onClose) {
+      onClose();
+      return;
+    }
+
+    setLocalIsOpen(false);
+  };
 
   const handleMarkAsRead = async (id: number) => {
     await markAsRead(id);
@@ -70,11 +109,14 @@ export default function NotificationDropdown() {
     loadNotifications();
   };
 
+  const safeNotifications = Array.isArray(notifications) ? notifications : [];
+
   return (
     <div className="relative">
       <button
-        className="relative dropdown-toggle flex items-center justify-center text-gray-500 transition-colors bg-brand-200 border border-brand-300 rounded-full hover:text-gray-800 h-11 w-11 hover:bg-brand-100"
+        className="relative dropdown-toggle flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-brand-300 bg-brand-200 text-gray-500 transition-colors hover:bg-brand-100 hover:text-gray-800 sm:h-11 sm:w-11"
         onClick={handleOpen}
+        aria-label="Buka notifikasi"
       >
         {unread > 0 && (
           <span className="absolute -top-0.5 -right-0.5 z-10 flex items-center justify-center w-4 h-4 text-[10px] font-bold text-white bg-orange-400 rounded-full">
@@ -91,18 +133,19 @@ export default function NotificationDropdown() {
       <Dropdown
         isOpen={isOpen}
         onClose={handleClose}
-        className="absolute -right-60 mt-4.25 flex h-120 w-87.5 flex-col rounded-2xl border border-gray-200 bg-white p-3 shadow-theme-lg dark:border-gray-800 dark:bg-gray-dark sm:w-90.25 lg:right-0"
+        positionClassName="fixed inset-x-4 top-[72px] z-50 sm:absolute sm:inset-auto sm:right-0 sm:top-auto sm:mt-4"
+        className="flex max-h-[calc(100vh-88px)] w-auto flex-col rounded-2xl p-3 sm:h-120 sm:w-90.25"
       >
-        <div className="flex items-center justify-between pb-3 mb-3 border-b border-gray-100 dark:border-gray-700">
-          <h5 className="text-lg font-semibold text-gray-800 dark:text-gray-200">
+        <div className="mb-3 flex items-center justify-between gap-3 border-b border-gray-100 pb-3 dark:border-gray-700">
+          <h5 className="min-w-0 text-base font-semibold text-gray-800 dark:text-gray-200 sm:text-lg">
             Notifikasi
             {unread > 0 && (
-              <span className="ml-2 text-xs font-medium bg-orange-100 text-orange-600 px-2 py-0.5 rounded-full">
+              <span className="ml-2 rounded-full bg-orange-100 px-2 py-0.5 text-xs font-medium text-orange-600">
                 {unread} baru
               </span>
             )}
           </h5>
-          <div className="flex items-center gap-3">
+          <div className="flex shrink-0 items-center gap-2 sm:gap-3">
             {unread > 0 && (
               <button
                 onClick={handleMarkAllAsRead}
@@ -119,18 +162,18 @@ export default function NotificationDropdown() {
           </div>
         </div>
 
-        <ul className="flex flex-col h-auto overflow-y-auto custom-scrollbar">
-          {notifications.length === 0 && (
+        <ul className="custom-scrollbar flex h-auto flex-col overflow-y-auto">
+          {safeNotifications.length === 0 && (
             <li className="py-8 text-center text-sm text-gray-400">
               Tidak ada notifikasi
             </li>
           )}
 
-          {notifications.map((notif) => (
+          {safeNotifications.map((notif) => (
             <li key={notif.id}>
               <DropdownItem
-                onItemClick={() => !notif.dibaca && handleMarkAsRead(notif.id)}
-                className={`flex gap-3 rounded-lg border-b border-gray-100 px-4 py-3 hover:bg-gray-100 dark:border-gray-800 dark:hover:bg-white/5 ${!notif.dibaca ? "bg-orange-50 dark:bg-orange-900/10" : ""
+                onItemClick={() => !notif.is_read && handleMarkAsRead(notif.id)}
+                className={`flex gap-3 rounded-lg border-b border-gray-100 px-4 py-3 hover:bg-gray-100 dark:border-gray-800 dark:hover:bg-white/5 ${!notif.is_read ? "bg-orange-50" : ""
                   }`}
               >
                 <span className="flex items-center justify-center w-10 h-10 rounded-full bg-orange-100 dark:bg-orange-900/30 shrink-0">
@@ -140,11 +183,11 @@ export default function NotificationDropdown() {
                 </span>
 
                 <span className="block flex-1">
-                  <span className={`mb-1 block text-sm font-semibold ${!notif.dibaca ? "text-gray-800 dark:text-white" : "text-gray-500"}`}>
-                    {notif.judul}
+                  <span className={`mb-1 block break-words text-sm font-semibold ${!notif.is_read ? "text-gray-800 dark:text-white" : "text-gray-500"}`}>
+                    {notif.title}
                   </span>
-                  <span className="block text-sm text-gray-500 dark:text-gray-400">
-                    {notif.pesan}
+                  <span className="block break-words text-sm text-gray-500 dark:text-gray-400">
+                    {notif.message}
                   </span>
                   <span className="mt-1 block text-xs text-gray-400">
                     {new Date(notif.created_at).toLocaleDateString("id-ID", {
@@ -155,7 +198,7 @@ export default function NotificationDropdown() {
                   </span>
                 </span>
 
-                {!notif.dibaca && (
+                {!notif.is_read && (
                   <span className="mt-1 w-2 h-2 rounded-full bg-orange-400 shrink-0" />
                 )}
               </DropdownItem>

@@ -1,8 +1,20 @@
 import api from "@/lib/axios";
-import { AbsensiSubmitData } from "@/types/absensi";
+import {
+    AbsensiSantriResponse,
+    AbsensiSubmitData,
+    AttendanceStatus,
+    RiwayatAbsensiItem,
+} from "@/types/absensi";
 
-export async function getAbsensiSantri(tanggal: string) {
-    const res = await api.get(`/absensi-santri?tanggal=${tanggal}`);
+export async function getAbsensiSantri(
+    attendance_date: string
+): Promise<AbsensiSantriResponse> {
+    const res = await api.get("/absensi-santri", {
+        params: {
+            attendance_date,
+        },
+    });
+
     return res.data;
 }
 
@@ -12,14 +24,21 @@ export async function saveAbsensiSantri(data: AbsensiSubmitData) {
 }
 
 export async function getRiwayatAbsensi(params?: {
-    tanggal?: string;
-    status?: string;
-}) {
-    const query = new URLSearchParams();
+    attendance_date?: string;
+    date_from?: string;
+    date_to?: string;
+    student_id?: string | number;
+    status?: AttendanceStatus | "";
+}): Promise<RiwayatAbsensiItem[]> {
+    const cleanParams = Object.fromEntries(
+        Object.entries(params || {}).filter(
+            ([, value]) => value !== "" && value !== null && value !== undefined
+        )
+    );
 
-    if (params?.tanggal) query.append("tanggal", params.tanggal);
-    if (params?.status) query.append("status", params.status);
+    const res = await api.get("/absensi-santri-riwayat", {
+        params: cleanParams,
+    });
 
-    const res = await api.get(`/absensi-santri-riwayat?${query.toString()}`);
     return res.data;
 }

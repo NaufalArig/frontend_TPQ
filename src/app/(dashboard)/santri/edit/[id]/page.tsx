@@ -36,7 +36,7 @@ export default function EditSantriPage({ params }: Props) {
     const handleSubmit = async (data: SantriFormData) => {
         if (!santri) return;
 
-        if (data.jenis_kelamin === "") {
+        if (data.gender === "") {
             alert("Jenis kelamin wajib dipilih");
             return;
         }

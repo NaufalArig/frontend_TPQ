@@ -9,13 +9,7 @@ import {
 
 import Cookies from "js-cookie";
 import { getUser } from "@/services/user";
-
-type User = {
-    id: number;
-    name: string;
-    email: string;
-    role: string;
-};
+import { User } from "@/types/user";
 
 type UserContextType = {
     user: User | null;
@@ -42,20 +36,19 @@ export const UserProvider = ({
             try {
                 const token = Cookies.get("token");
 
-                console.log("COOKIE TOKEN:", token);
-
                 if (!token) {
+                    setUser(null);
                     setLoading(false);
                     return;
                 }
 
                 const data = await getUser();
 
-                console.log("USER DATA:", data);
-
                 setUser(data);
             } catch (err) {
                 console.log("USER ERROR:", err);
+                Cookies.remove("token");
+                setUser(null);
             } finally {
                 setLoading(false);
             }

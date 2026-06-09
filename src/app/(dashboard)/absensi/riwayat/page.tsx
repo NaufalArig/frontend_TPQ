@@ -1,23 +1,30 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import PageBreadcrumb from "@/components/common/PageBreadCrumb";
 import ComponentCard from "@/components/common/ComponentCard";
 import { getRiwayatAbsensi } from "@/services/absensi";
-import { RiwayatAbsensiItem } from "@/types/absensi";
+import { AttendanceStatus, RiwayatAbsensiItem } from "@/types/absensi";
 import Toast from "@/components/ui/toast/Toast";
 import { useToast } from "@/hooks/useToast";
-import Link from "next/link";
-import DatePicker from "@/components/form/date-picker";
-import { Table, TableBody, TableCell, TableHeader, TableRow } from "@/components/ui/table";
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHeader,
+    TableRow,
+} from "@/components/ui/table";
+import Pagination from "@/components/ui/pagination/Pagination";
 
 export default function RiwayatAbsensiPage() {
     const [data, setData] = useState<RiwayatAbsensiItem[]>([]);
-    const [tanggal, setTanggal] = useState("");
-    const [status, setStatus] = useState("");
+    const [attendanceDate, setAttendanceDate] = useState("");
+    const [status, setStatus] = useState<AttendanceStatus | "">("");
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState("");
-    const [showFilter, setShowFilter] = useState(false);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [pageSize, setPageSize] = useState(10);
 
     const { toast, showToast, hideToast } = useToast();
 
@@ -27,7 +34,7 @@ export default function RiwayatAbsensiPage() {
                 setLoading(true);
 
                 const res = await getRiwayatAbsensi({
-                    tanggal,
+                    attendance_date: attendanceDate,
                     status,
                 });
 
@@ -40,21 +47,36 @@ export default function RiwayatAbsensiPage() {
             }
         };
 
-        fetchData();
-    }, [tanggal, status, showToast]);
+        void fetchData();
+    }, [attendanceDate, status, showToast]);
 
-    const badgeClass = (status: string) => {
-        switch (status) {
-            case "hadir":
+    const badgeClass = (value: AttendanceStatus) => {
+        switch (value) {
+            case "present":
                 return "bg-green-100 text-green-700";
-            case "izin":
+            case "permission":
                 return "bg-yellow-100 text-yellow-700";
-            case "sakit":
+            case "sick":
                 return "bg-blue-100 text-blue-700";
-            case "alpa":
+            case "absent":
                 return "bg-red-100 text-red-700";
             default:
                 return "bg-gray-100 text-gray-700";
+        }
+    };
+
+    const statusLabel = (value: AttendanceStatus) => {
+        switch (value) {
+            case "present":
+                return "Hadir";
+            case "permission":
+                return "Izin";
+            case "sick":
+                return "Sakit";
+            case "absent":
+                return "Alpa";
+            default:
+                return value;
         }
     };
 
@@ -62,11 +84,16 @@ export default function RiwayatAbsensiPage() {
         const keyword = search.toLowerCase();
 
         return (
-            item.santri?.nama?.toLowerCase().includes(keyword) ||
-            item.keterangan?.toLowerCase().includes(keyword) ||
+            item.student?.name?.toLowerCase().includes(keyword) ||
+            item.note?.toLowerCase().includes(keyword) ||
             item.user?.name?.toLowerCase().includes(keyword)
         );
     });
+
+    const totalPages = Math.max(1, Math.ceil(filteredData.length / pageSize));
+    const safeCurrentPage = Math.min(currentPage, totalPages);
+    const pageStart = (safeCurrentPage - 1) * pageSize;
+    const paginatedData = filteredData.slice(pageStart, pageStart + pageSize);
 
     return (
         <>
@@ -75,7 +102,7 @@ export default function RiwayatAbsensiPage() {
             <div className="mb-4">
                 <Link
                     href="/absensi"
-                    className="inline-flex rounded-lg bg-brand-200 px-4 py-2 border border-brand-300 text-sm font-medium text-gray-700 hover:bg-brand-100"
+                    className="inline-flex w-full justify-center rounded-lg border border-brand-300 bg-brand-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-brand-100 sm:w-auto"
                 >
                     Kembali ke Absensi
                 </Link>
@@ -84,117 +111,153 @@ export default function RiwayatAbsensiPage() {
             <ComponentCard
                 title="Riwayat Absensi Santri"
                 action={
-                    <div className="flex flex-col gap-3">
-                        <div className="flex gap-3">
-                            <input
-                                type="text"
-                                value={search}
-                                onChange={(e) => setSearch(e.target.value)}
-                                placeholder="Cari nama santri, keterangan, atau penginput..."
-                                className="w-80 rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
-                            />
-
-                            <button
-                                type="button"
-                                onClick={() => setShowFilter(!showFilter)}
-                                className="rounded-lg bg-brand-100 px-4 py-2.5 text-sm font-medium text-brand-700 hover:bg-brand-200"
-                            >
-                                Filter
-                            </button>
-
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    setTanggal("");
-                                    setStatus("");
-                                    setSearch("");
-                                }}
-                                className="rounded-lg bg-gray-100 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-200"
-                            >
-                                Reset
-                            </button>
-                        </div>
-
-                        {showFilter && (
-                            <div className="flex gap-3 rounded-xl border border-gray-200 bg-gray-50 p-3">
-                                <DatePicker
-                                    key={tanggal || "empty-date"}
-                                    id="tanggal-riwayat-absensi"
-                                    placeholder="Pilih tanggal"
-                                    defaultDate={tanggal}
-                                    onChange={(_, currentDateString) => {
-                                        setTanggal(currentDateString);
-                                    }}
-                                />
-
-                                <select
-                                    value={status}
-                                    onChange={(e) => setStatus(e.target.value)}
-                                    className="rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
-                                >
-                                    <option value="">Semua Status</option>
-                                    <option value="hadir">Hadir</option>
-                                    <option value="izin">Izin</option>
-                                    <option value="sakit">Sakit</option>
-                                    <option value="alpa">Alpa</option>
-                                </select>
-                            </div>
-                        )}
-                    </div>
+                    <input
+                        type="text"
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        placeholder="Cari nama santri, keterangan, atau penginput..."
+                        className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 sm:w-80"
+                    />
                 }
             >
                 {loading ? (
                     <p>Loading riwayat absensi...</p>
-                ) : filteredData.length === 0 ? (
-                    <p className="text-sm text-gray-500">Belum ada data absensi.</p>
                 ) : (
-                    <div className="overflow-x-auto rounded-xl border border-gray-200">
-                        <Table className="w-full text-sm">
-                            <TableHeader className="border-b border-brand-300 bg-brand-100">
-                                <TableRow>
-                                    {["No", "Tanggal", "Nama Santri", "Status", "Keterangan", "Diinput"].map((h) => (
-                                        <TableCell key={h} isHeader className="px-4 py-3 font-semibold text-black text-start text-theme-xs dark:text-gray-400">
-                                            {h}
-                                        </TableCell>
-                                    ))}
-                                </TableRow>
-                            </TableHeader>
+                    <div className="overflow-hidden rounded-xl border border-gray-200">
+                        <div className="overflow-x-auto">
+                            <div className="min-w-[900px]">
+                                <Table className="w-full text-sm">
+                                    <TableHeader className="border-b border-brand-300 bg-brand-100">
+                                        <TableRow>
+                                            <TableCell isHeader className="px-4 py-3 text-start text-theme-xs font-semibold text-black dark:text-gray-400">
+                                                No
+                                            </TableCell>
 
-                            <TableBody className="divide-y divide-gray-100 dark:divide-white/5">
-                                {filteredData.map((item, index) => (
-                                    <TableRow key={item.id}>
-                                        <TableCell className="px-4 py-3 text-gray-500 text-theme-sm dark:text-gray-400">{index + 1}</TableCell>
-                                        <TableCell className="px-4 py-3 text-gray-500 text-theme-sm dark:text-gray-400 capitalize">
-                                            {new Date(item.tanggal).toLocaleDateString("id-ID", {
-                                                day: "numeric",
-                                                month: "long",
-                                                year: "numeric",
-                                            })}
-                                        </TableCell>
-                                        <TableCell className="px-4 py-3 text-gray-500 text-theme-sm dark:text-gray-400 capitalize">
-                                            {item.santri?.nama ?? "-"}
-                                        </TableCell>
-                                        <TableCell className="px-4 py-3 text-gray-500 text-theme-sm dark:text-gray-400">
-                                            <span
-                                                className={`rounded-full px-2 py-1 text-xs font-medium capitalize ${badgeClass(
-                                                    item.status
-                                                )}`}
-                                            >
-                                                {item.status}
-                                            </span>
-                                        </TableCell>
-                                        <TableCell className="px-4 py-3 text-gray-500 text-theme-sm dark:text-gray-400">{item.keterangan || "-"}</TableCell>
-                                        <TableCell className="px-4 py-3 text-gray-500 text-theme-sm dark:text-gray-400">{item.user?.name ?? "-"}</TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
+                                            <TableCell isHeader className="px-4 py-3 text-start text-theme-xs font-semibold text-black dark:text-gray-400">
+                                                <div className="space-y-2">
+                                                    <span>Tanggal</span>
+                                                    <input
+                                                        type="date"
+                                                        value={attendanceDate}
+                                                        onChange={(e) => setAttendanceDate(e.target.value)}
+                                                        className="w-36 rounded-lg border border-brand-300 bg-white px-2 py-1.5 text-xs font-normal text-gray-700 focus:border-brand-300 focus:outline-hidden focus:ring-2 focus:ring-brand-500/10"
+                                                    />
+                                                </div>
+                                            </TableCell>
+
+                                            <TableCell isHeader className="px-4 py-3 text-start text-theme-xs font-semibold text-black dark:text-gray-400">
+                                                Nama Santri
+                                            </TableCell>
+                                            <TableCell isHeader className="px-4 py-3 text-start text-theme-xs font-semibold text-black dark:text-gray-400">
+                                                Kelas
+                                            </TableCell>
+
+                                            <TableCell isHeader className="px-4 py-3 text-start text-theme-xs font-semibold text-black dark:text-gray-400">
+                                                <div className="space-y-2">
+                                                    <span>Status</span>
+                                                    <select
+                                                        value={status}
+                                                        onChange={(e) =>
+                                                            setStatus(e.target.value as AttendanceStatus | "")
+                                                        }
+                                                        className="w-32 rounded-lg border border-brand-300 bg-white px-2 py-1.5 text-xs font-normal text-gray-700 focus:border-brand-300 focus:outline-hidden focus:ring-2 focus:ring-brand-500/10"
+                                                    >
+                                                        <option value="">Semua</option>
+                                                        <option value="present">Hadir</option>
+                                                        <option value="permission">Izin</option>
+                                                        <option value="sick">Sakit</option>
+                                                        <option value="absent">Alpa</option>
+                                                    </select>
+                                                </div>
+                                            </TableCell>
+
+                                            <TableCell isHeader className="px-4 py-3 text-start text-theme-xs font-semibold text-black dark:text-gray-400">
+                                                Keterangan
+                                            </TableCell>
+                                            <TableCell isHeader className="px-4 py-3 text-start text-theme-xs font-semibold text-black dark:text-gray-400">
+                                                Diinput
+                                            </TableCell>
+                                        </TableRow>
+                                    </TableHeader>
+
+                                    <TableBody className="divide-y divide-gray-100 dark:divide-white/5">
+                                        {filteredData.length === 0 ? (
+                                            <TableRow>
+                                                <TableCell
+                                                    colSpan={7}
+                                                    className="px-4 py-6 text-center text-theme-sm text-gray-500"
+                                                >
+                                                    Belum ada data absensi.
+                                                </TableCell>
+                                            </TableRow>
+                                        ) : (
+                                            paginatedData.map((item, index) => (
+                                                <TableRow key={item.id}>
+                                                    <TableCell className="px-4 py-3 text-theme-sm text-gray-500 dark:text-gray-400">
+                                                        {pageStart + index + 1}
+                                                    </TableCell>
+
+                                                    <TableCell className="px-4 py-3 text-theme-sm text-gray-500 dark:text-gray-400">
+                                                        {new Date(item.attendance_date).toLocaleDateString(
+                                                            "id-ID",
+                                                            {
+                                                                day: "numeric",
+                                                                month: "long",
+                                                                year: "numeric",
+                                                            }
+                                                        )}
+                                                    </TableCell>
+
+                                                    <TableCell className="px-4 py-3 text-theme-sm text-gray-500 capitalize dark:text-gray-400">
+                                                        {item.student?.name ?? "-"}
+                                                    </TableCell>
+
+                                                    <TableCell className="px-4 py-3 text-theme-sm text-gray-500 dark:text-gray-400">
+                                                        {item.student?.study_class?.name ?? "-"}
+                                                    </TableCell>
+
+                                                    <TableCell className="px-4 py-3 text-theme-sm text-gray-500 dark:text-gray-400">
+                                                        <span
+                                                            className={`rounded-full px-2 py-1 text-xs font-medium ${badgeClass(
+                                                                item.status
+                                                            )}`}
+                                                        >
+                                                            {statusLabel(item.status)}
+                                                        </span>
+                                                    </TableCell>
+
+                                                    <TableCell className="px-4 py-3 text-theme-sm text-gray-500 dark:text-gray-400">
+                                                        {item.note || "-"}
+                                                    </TableCell>
+
+                                                    <TableCell className="px-4 py-3 text-theme-sm text-gray-500 dark:text-gray-400">
+                                                        {item.user?.name ?? "-"}
+                                                    </TableCell>
+                                                </TableRow>
+                                            ))
+                                        )}
+                                    </TableBody>
+                                </Table>
+                            </div>
+                        </div>
+
+                        <Pagination
+                            totalItems={filteredData.length}
+                            currentPage={safeCurrentPage}
+                            pageSize={pageSize}
+                            onPageChange={setCurrentPage}
+                            onPageSizeChange={setPageSize}
+                        />
                     </div>
                 )}
             </ComponentCard>
 
             {toast.show && (
-                <Toast message={toast.message} type={toast.type} onClose={hideToast} />
+                <Toast
+                    message={toast.message}
+                    type={toast.type}
+                    onClose={hideToast}
+                />
             )}
         </>
     );

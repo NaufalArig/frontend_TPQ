@@ -1,52 +1,156 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { ArrowLeft, ChevronRight, Home } from "lucide-react";
 import React from "react";
 
 interface BreadcrumbProps {
-  pageTitle: string;
+    pageTitle: string;
+}
+
+type BreadcrumbItem = {
+    label: string;
+    href?: string;
+};
+
+const routeLabels: Record<string, string> = {
+    dashboard: "Dashboard",
+    santri: "Santri",
+    guru: "Guru",
+    users: "Users",
+    kelas: "Kelas",
+    absensi: "Absensi",
+    riwayat: "Riwayat",
+    notifikasi: "Notifikasi",
+    profile: "Profile",
+    aset: "Aset",
+    "activity-logs": "Activity Log",
+    "kategori-keuangan": "Kategori Keuangan",
+    "keuangan-spp": "Keuangan SPP",
+    "keuangan-pembangunan": "Keuangan Pembangunan",
+};
+
+function getSegmentLabel(segment: string) {
+    if (routeLabels[segment]) return routeLabels[segment];
+
+    return segment
+        .split("-")
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(" ");
+}
+
+function isDynamicSegment(segment: string) {
+    return /^\d+$/.test(segment) || /^[0-9a-f-]{12,}$/i.test(segment);
+}
+
+function buildBreadcrumbItems(pathname: string, pageTitle: string): BreadcrumbItem[] {
+    const segments = pathname.split("/").filter(Boolean);
+
+    if (pathname === "/dashboard") {
+        return [{ label: pageTitle }];
+    }
+
+    const items: BreadcrumbItem[] = [
+        {
+            label: "Dashboard",
+            href: "/dashboard",
+        },
+    ];
+
+    const actionIndex = segments.findIndex((segment) =>
+        ["create", "edit"].includes(segment)
+    );
+
+    if (actionIndex >= 0) {
+        const parentSegments = segments.slice(0, actionIndex);
+        const parentHref = `/${parentSegments.join("/")}`;
+        const parentSegment = parentSegments[parentSegments.length - 1];
+
+        if (parentSegment) {
+            items.push({
+                label: getSegmentLabel(parentSegment),
+                href: parentHref,
+            });
+        }
+
+        items.push({ label: pageTitle });
+        return items;
+    }
+
+    const navigableSegments = segments.filter(
+        (segment) => !isDynamicSegment(segment)
+    );
+
+    navigableSegments.forEach((segment, index) => {
+        const href = `/${navigableSegments.slice(0, index + 1).join("/")}`;
+        const isLast = index === navigableSegments.length - 1;
+
+        items.push({
+            label: isLast ? pageTitle : getSegmentLabel(segment),
+            href: isLast ? undefined : href,
+        });
+    });
+
+    return items;
 }
 
 const PageBreadcrumb: React.FC<BreadcrumbProps> = ({ pageTitle }) => {
-  return (
-    <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-      <h2
-        className="text-xl font-semibold text-gray-800"
-        x-text="pageName"
-      >
-        {pageTitle}
-      </h2>
-      {/* <nav>
-        <ol className="flex items-center gap-1.5">
-          <li>
-            <Link
-              className="inline-flex items-center gap-1.5 text-sm text-gray-500"
-              href="/dashboard"
-            >
-              Dashboard
-              <svg
-                className="stroke-current"
-                width="17"
-                height="16"
-                viewBox="0 0 17 16"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M6.0765 12.667L10.2432 8.50033L6.0765 4.33366"
-                  stroke=""
-                  strokeWidth="1.2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </Link>
-          </li>
-          <li className="text-sm text-gray-800 dark:text-white/90">
-            {pageTitle}
-          </li>
-        </ol>
-      </nav> */}
-    </div>
-  );
+    const pathname = usePathname();
+    const items = buildBreadcrumbItems(pathname, pageTitle);
+    const backItem = [...items].reverse().find((item) => item.href);
+    const backHref = backItem?.href;
+
+    return (
+        <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+                <h2 className="text-xl font-semibold text-gray-800">
+                    {pageTitle}
+                </h2>
+
+                <nav className="mt-2" aria-label="Breadcrumb">
+                    <ol className="flex flex-wrap items-center gap-1.5 text-sm">
+                        {items.map((item, index) => {
+                            const isFirst = index === 0;
+                            const isLast = index === items.length - 1;
+
+                            return (
+                                <li key={`${item.label}-${index}`} className="flex items-center gap-1.5">
+                                    {index > 0 && (
+                                        <ChevronRight className="h-4 w-4 text-gray-400" />
+                                    )}
+
+                                    {item.href && !isLast ? (
+                                        <Link
+                                            href={item.href}
+                                            className="inline-flex items-center gap-1 text-gray-500 hover:text-brand-600"
+                                        >
+                                            {isFirst && <Home className="h-4 w-4" />}
+                                            <span>{item.label}</span>
+                                        </Link>
+                                    ) : (
+                                        <span className="font-medium text-gray-800">
+                                            {item.label}
+                                        </span>
+                                    )}
+                                </li>
+                            );
+                        })}
+                    </ol>
+                </nav>
+            </div>
+
+            {backHref && pathname !== "/dashboard" && (
+                <Link
+                    href={backHref}
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 sm:w-auto"
+                >
+                    <ArrowLeft className="h-4 w-4" />
+                    Kembali
+                </Link>
+            )}
+        </div>
+    );
 };
 
 export default PageBreadcrumb;

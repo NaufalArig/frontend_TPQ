@@ -5,10 +5,13 @@ import { getNotifications, markAsRead, markAllAsRead } from "@/services/notifica
 import { NotifItem , NotificationSummary } from "@/types/notification";
 import PageBreadcrumb from "@/components/common/PageBreadCrumb";
 import ComponentCard from "@/components/common/ComponentCard";
+import Pagination from "@/components/ui/pagination/Pagination";
 
 export default function NotifikasiPage() {
     const [summary, setSummary] = useState<NotificationSummary | null>(null);
     const [loading, setLoading] = useState(true);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [pageSize, setPageSize] = useState(10);
 
     const loadData = async () => {
         const data = await getNotifications();
@@ -17,14 +20,14 @@ export default function NotifikasiPage() {
     };
 
     useEffect(() => {
-    const fetchData = async () => {
-        const data = await getNotifications();
-        setSummary(data);
-        setLoading(false);
-    };
+        const fetchData = async () => {
+            const data = await getNotifications();
+            setSummary(data);
+            setLoading(false);
+        };
 
-    fetchData();
-}, []);
+        fetchData();
+    }, []);
 
     const handleRead = async (id: number) => {
         await markAsRead(id);
@@ -38,18 +41,27 @@ export default function NotifikasiPage() {
 
     if (loading) return <p>Loading...</p>;
 
+    const notifications = summary?.data ?? [];
+    const totalPages = Math.max(1, Math.ceil(notifications.length / pageSize));
+    const safeCurrentPage = Math.min(currentPage, totalPages);
+    const pageStart = (safeCurrentPage - 1) * pageSize;
+    const paginatedNotifications = notifications.slice(
+        pageStart,
+        pageStart + pageSize
+    );
+
     return (
         <div>
             <PageBreadcrumb pageTitle="Notifikasi" />
             <ComponentCard title="Daftar Notifikasi">
-                <div className="flex justify-between items-center mb-4">
+                <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <p className="text-sm text-gray-500">
                         {summary?.unread} notifikasi belum dibaca
                     </p>
                     {(summary?.unread ?? 0) > 0 && (
                         <button
                             onClick={handleReadAll}
-                            className="text-sm text-blue-500 hover:underline"
+                            className="w-full rounded-lg border border-blue-200 px-4 py-2 text-sm font-medium text-blue-500 hover:bg-blue-50 sm:w-auto sm:border-0 sm:p-0 sm:hover:bg-transparent sm:hover:underline"
                         >
                             Tandai semua dibaca
                         </button>
@@ -57,32 +69,32 @@ export default function NotifikasiPage() {
                 </div>
 
                 <div className="space-y-3">
-                    {summary?.data.length === 0 && (
+                    {notifications.length === 0 && (
                         <p className="text-center text-gray-400 py-8">
                             Tidak ada notifikasi
                         </p>
                     )}
 
-                    {summary?.data.map((notif: NotifItem ) => (
+                    {paginatedNotifications.map((notif: NotifItem) => (
                         <div
                             key={notif.id}
-                            className={`flex items-start justify-between gap-4 p-4 rounded-xl border transition-colors ${notif.dibaca
+                            className={`flex flex-col gap-3 rounded-xl border p-4 transition-colors sm:flex-row sm:items-start sm:justify-between ${notif.is_read
                                     ? "bg-white border-gray-100"
                                     : "bg-blue-50 border-blue-200"
                                 }`}
                         >
-                            <div className="flex gap-3 items-start">
+                            <div className="flex min-w-0 items-start gap-3">
                                 {/* Dot indikator */}
-                                <span className={`mt-1.5 w-2 h-2 rounded-full shrink-0 ${notif.dibaca ? "bg-gray-300" : "bg-blue-500"
+                                <span className={`mt-1.5 w-2 h-2 rounded-full shrink-0 ${notif.is_read ? "bg-gray-300" : "bg-blue-500"
                                     }`} />
 
-                                <div>
-                                    <p className={`text-sm font-semibold ${notif.dibaca ? "text-gray-500" : "text-gray-800"
+                                <div className="min-w-0">
+                                    <p className={`text-sm font-semibold ${notif.is_read ? "text-gray-500" : "text-gray-800"
                                         }`}>
-                                        {notif.judul}
+                                        {notif.title}
                                     </p>
-                                    <p className="text-sm text-gray-500 mt-0.5">
-                                        {notif.pesan}
+                                    <p className="mt-0.5 break-words text-sm text-gray-500">
+                                        {notif.message}
                                     </p>
                                     <p className="text-xs text-gray-400 mt-1">
                                         {new Date(notif.created_at).toLocaleDateString("id-ID", {
@@ -94,16 +106,26 @@ export default function NotifikasiPage() {
                                 </div>
                             </div>
 
-                            {!notif.dibaca && (
+                            {!notif.is_read && (
                                 <button
                                     onClick={() => handleRead(notif.id)}
-                                    className="text-xs text-blue-500 hover:underline shrink-0 mt-1"
+                                    className="w-full shrink-0 rounded-lg border border-blue-200 px-3 py-2 text-xs font-medium text-blue-500 hover:bg-blue-50 sm:mt-1 sm:w-auto sm:border-0 sm:p-0 sm:hover:bg-transparent sm:hover:underline"
                                 >
                                     Tandai dibaca
                                 </button>
                             )}
                         </div>
                     ))}
+                </div>
+
+                <div className="mt-4 overflow-hidden rounded-xl border border-gray-200">
+                    <Pagination
+                        totalItems={notifications.length}
+                        currentPage={safeCurrentPage}
+                        pageSize={pageSize}
+                        onPageChange={setCurrentPage}
+                        onPageSizeChange={setPageSize}
+                    />
                 </div>
             </ComponentCard>
         </div>

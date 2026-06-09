@@ -1,7 +1,6 @@
 import GridShape from "@/components/common/GridShape";
 import { Metadata } from "next";
 import Link from "next/link";
-import React from "react";
 import { LockIcon } from "lucide-react";
 
 export const metadata: Metadata = {

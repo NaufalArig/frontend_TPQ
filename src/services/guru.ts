@@ -11,6 +11,40 @@ function getToken() {
         ?.split("=")[1];
 }
 
+function buildGuruFormData(data: GuruFormData) {
+    const formData = new FormData();
+
+    Object.entries(data).forEach(([key, value]) => {
+        if (value === null || value === undefined || value === "") {
+            return;
+        }
+
+        // Jangan kirim photo lama dalam bentuk string.
+        // Photo hanya dikirim kalau File baru.
+        if (key === "photo" && !(value instanceof File)) {
+            return;
+        }
+
+        formData.append(key, value as string | Blob);
+    });
+
+    return formData;
+}
+
+async function handleResponse(res: Response, fallbackMessage: string) {
+    const result = await res.json();
+
+    if (!res.ok) {
+        if (result.errors) {
+            throw new Error(JSON.stringify(result.errors));
+        }
+
+        throw new Error(result.message || fallbackMessage);
+    }
+
+    return result;
+}
+
 export async function getGuruById(id: string | number) {
     const token = getToken();
 
@@ -21,13 +55,7 @@ export async function getGuruById(id: string | number) {
         },
     });
 
-    if (!res.ok) {
-        throw new Error("Gagal mengambil data guru");
-    }
-
-    const result = await res.json();
-    console.log("RAW RESPONSE getGuruById:", result);
-    return result;
+    return handleResponse(res, "Gagal mengambil data guru");
 }
 
 export async function getGuru() {
@@ -39,25 +67,13 @@ export async function getGuru() {
             Accept: "application/json",
         },
     });
-    console.log("API response:", res.json);
 
-    if (!res.ok) {
-        throw new Error("Gagal mengambil data guru");
-    }
-
-    return res.json();
+    return handleResponse(res, "Gagal mengambil data guru");
 }
 
 export async function createGuru(data: GuruFormData) {
     const token = Cookies.get("token");
-
-    const formData = new FormData();
-
-    Object.entries(data).forEach(([key, value]) => {
-        if (value !== null && value !== undefined) {
-            formData.append(key, value as string | Blob);
-        }
-    });
+    const formData = buildGuruFormData(data);
 
     const res = await fetch(`${API_URL}/guru`, {
         method: "POST",
@@ -68,28 +84,12 @@ export async function createGuru(data: GuruFormData) {
         body: formData,
     });
 
-    const result = await res.json();
-
-    if (!res.ok) {
-        throw new Error(result.message || JSON.stringify(result));
-    }
-
-    return result;
+    return handleResponse(res, "Gagal menambahkan data guru");
 }
 
-export async function updateGuru(
-    id: string | number,
-    data: GuruFormData
-) {
+export async function updateGuru(id: string | number, data: GuruFormData) {
     const token = getToken();
-
-    const formData = new FormData();
-
-    Object.entries(data).forEach(([key, value]) => {
-        if (value !== null && value !== undefined) {
-            formData.append(key, value as string | Blob);
-        }
-    });
+    const formData = buildGuruFormData(data);
 
     formData.append("_method", "PUT");
 
@@ -102,12 +102,7 @@ export async function updateGuru(
         body: formData,
     });
 
-    if (!res.ok) {
-        const error = await res.json();
-        throw new Error(JSON.stringify(error.errors || error));
-    }
-
-    return res.json();
+    return handleResponse(res, "Gagal memperbarui data guru");
 }
 
 export async function deleteGuru(id: number) {
@@ -121,9 +116,5 @@ export async function deleteGuru(id: number) {
         },
     });
 
-    if (!res.ok) {
-        throw new Error("Gagal menghapus guru");
-    }
-
-    return res.json();
+    return handleResponse(res, "Gagal menghapus guru");
 }
