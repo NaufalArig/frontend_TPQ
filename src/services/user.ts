@@ -1,5 +1,10 @@
 import API_URL from "@/lib/api";
-import { PasswordFormData, ProfileFormData, UserFormData } from "@/types/user";
+import {
+  PasswordFormData,
+  ProfileFormData,
+  User,
+  UserFormData,
+} from "@/types/user";
 import Cookies from "js-cookie";
 import api from "@/lib/axios";
 
@@ -12,7 +17,7 @@ function getToken() {
     ?.split("=")[1];
 }
 
-export async function getUserById(id: string | number) {
+export async function getUserById(id: string | number): Promise<User> {
   const token = getToken();
 
   const res = await fetch(`${API_URL}/users/${id}`, {
@@ -29,7 +34,7 @@ export async function getUserById(id: string | number) {
   return res.json();
 }
 
-export async function getUser() {
+export async function getUser(): Promise<User> {
   const token = Cookies.get("token");
 
   if (!token) {
@@ -50,7 +55,7 @@ export async function getUser() {
   return res.json();
 }
 
-export async function getUsers() {
+export async function getUsers(): Promise<User[]> {
   const res = await api.get("/users");
   return res.data;
 }
@@ -62,7 +67,7 @@ export async function createUser(data: UserFormData) {
     email: data.email?.trim() ? data.email : null,
     password: data.password,
     role: data.role,
-    status: data.status || "aktif",
+    status: data.status || "active",
   };
 
   const res = await api.post("/users", payload);
@@ -75,7 +80,7 @@ export async function updateUser(id: number, data: UserFormData) {
     username: data.username,
     email: data.email?.trim() ? data.email : null,
     role: data.role,
-    status: data.status,
+    status: data.status || "active",
   };
 
   if (data.password && data.password.trim() !== "") {

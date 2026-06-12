@@ -17,13 +17,15 @@ import {
 } from "@/services/keuangan-spp";
 import { KeuanganSpp } from "@/types/keuangan-spp";
 import Pagination from "@/components/ui/pagination/Pagination";
+import SortableHeader, {
+    SortDirection,
+} from "@/components/ui/table/SortableHeader";
+import DatePicker from "@/components/form/date-picker";
 
 type Props = {
     search: string;
-    dateFrom: string;
-    dateTo: string;
-    onDateFromChange: (value: string) => void;
-    onDateToChange: (value: string) => void;
+    filterDate: string;
+    onFilterDateChange: (value: string) => void;
 };
 
 const bulanLabel: Record<number, string> = {
@@ -49,17 +51,35 @@ function formatRupiah(value: number | string) {
     }).format(Number(value || 0));
 }
 
+function getDateOnly(value?: string | null) {
+    return value ? value.slice(0, 10) : "";
+}
+
+function formatDate(value?: string | null) {
+    const dateOnly = getDateOnly(value);
+    if (!dateOnly) return "-";
+
+    const date = new Date(`${dateOnly}T00:00:00`);
+    if (Number.isNaN(date.getTime())) return "-";
+
+    return date.toLocaleDateString("id-ID", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+    });
+}
+
 export default function KeuanganSppTable({
     search,
-    dateFrom,
-    dateTo,
-    onDateFromChange,
-    onDateToChange,
+    filterDate,
+    onFilterDateChange,
 }: Props) {
     const [data, setData] = useState<KeuanganSpp[]>([]);
     const [loading, setLoading] = useState(true);
     const [currentPage, setCurrentPage] = useState(1);
     const [pageSize, setPageSize] = useState(10);
+    const [sortKey, setSortKey] = useState<string | null>(null);
+    const [sortDirection, setSortDirection] = useState<SortDirection>(null);
     const { toast, showToast, hideToast } = useToast();
     const router = useRouter();
 
@@ -80,10 +100,16 @@ export default function KeuanganSppTable({
             .finally(() => setLoading(false));
     }, []);
 
+    const handleSort = (key: string, direction: SortDirection) => {
+        setSortKey(direction ? key : null);
+        setSortDirection(direction);
+        setCurrentPage(1);
+    };
+
     const filteredData = data.filter((item) => {
         const keyword = search.toLowerCase();
-        const matchDateFrom = !dateFrom || item.payment_date >= dateFrom;
-        const matchDateTo = !dateTo || item.payment_date <= dateTo;
+        const paymentDate = getDateOnly(item.payment_date);
+        const matchDate = !filterDate || paymentDate === filterDate;
         const matchSearch =
             (item.student?.name || "").toLowerCase().includes(keyword) ||
             (item.student?.nisn || "").toLowerCase().includes(keyword) ||
@@ -91,19 +117,61 @@ export default function KeuanganSppTable({
             (item.user?.name || "").toLowerCase().includes(keyword) ||
             String(item.amount).toLowerCase().includes(keyword) ||
             String(item.year).toLowerCase().includes(keyword) ||
-            item.payment_date.toLowerCase().includes(keyword);
+            formatDate(item.payment_date).toLowerCase().includes(keyword) ||
+            paymentDate.includes(keyword);
 
-        return matchSearch && matchDateFrom && matchDateTo;
+        return matchSearch && matchDate;
     });
 
     const totalNominal = filteredData.reduce(
         (total, item) => total + Number(item.amount || 0),
         0
     );
-    const totalPages = Math.max(1, Math.ceil(filteredData.length / pageSize));
+
+    const sortedData = [...filteredData].sort((a, b) => {
+        if (!sortKey || !sortDirection) return 0;
+
+        const getValue = (item: KeuanganSpp) => {
+            switch (sortKey) {
+                case "payment_date":
+                    return item.payment_date || "";
+                case "student":
+                    return item.student?.name || "";
+                case "month":
+                    return Number(item.month || 0);
+                case "year":
+                    return Number(item.year || 0);
+                case "amount":
+                    return Number(item.amount || 0);
+                case "note":
+                    return item.note || "";
+                case "user":
+                    return item.user?.name || "";
+                default:
+                    return "";
+            }
+        };
+
+        const valueA = getValue(a);
+        const valueB = getValue(b);
+
+        if (typeof valueA === "number" && typeof valueB === "number") {
+            return sortDirection === "asc" ? valueA - valueB : valueB - valueA;
+        }
+
+        const compare = String(valueA).localeCompare(String(valueB), "id", {
+            numeric: true,
+            sensitivity: "base",
+        });
+
+        return sortDirection === "asc" ? compare : -compare;
+    });
+
+    const totalPages = Math.max(1, Math.ceil(sortedData.length / pageSize));
     const safeCurrentPage = Math.min(currentPage, totalPages);
     const pageStart = (safeCurrentPage - 1) * pageSize;
-    const paginatedData = filteredData.slice(pageStart, pageStart + pageSize);
+    const paginatedData = sortedData.slice(pageStart, pageStart + pageSize);
+    const hasActiveFilter = filterDate !== "";
 
     const handleDeleteConfirm = async () => {
         if (!deleteModal.id) return;
@@ -194,6 +262,38 @@ export default function KeuanganSppTable({
                 </p>
             </div>
 
+            <div className="mb-3 flex flex-wrap items-center gap-3">
+                <div className="w-full sm:w-52">
+                    <DatePicker
+                        key={filterDate || "empty-spp-filter-date"}
+                        id="keuangan-spp-filter-date"
+                        placeholder="Pilih tanggal"
+                        defaultDate={filterDate || undefined}
+                        onChange={(_, currentDateString) => {
+                            onFilterDateChange(currentDateString || "");
+                            setCurrentPage(1);
+                        }}
+                    />
+                </div>
+
+                {hasActiveFilter && (
+                    <button
+                        type="button"
+                        onClick={() => {
+                            onFilterDateChange("");
+                            setCurrentPage(1);
+                        }}
+                        className="h-10 rounded-lg border border-gray-200 px-3 text-sm font-medium text-gray-600 hover:bg-gray-50"
+                    >
+                        Reset Filter
+                    </button>
+                )}
+
+                <span className="ml-auto text-xs text-gray-400">
+                    {sortedData.length} data ditemukan
+                </span>
+            </div>
+
             <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/5 dark:bg-white/3">
                 <div className="max-w-full overflow-x-auto">
                     <div className="min-w-[1100px]">
@@ -202,38 +302,38 @@ export default function KeuanganSppTable({
                                 <TableRow>
                                     <TableCell isHeader className="px-4 py-3 font-semibold text-black text-start text-theme-xs">No</TableCell>
                                     <TableCell isHeader className="px-4 py-3 font-semibold text-black text-start text-theme-xs">
-                                        <div className="space-y-2">
-                                            <span>Tanggal</span>
-                                            <div className="flex gap-1">
-                                                <input
-                                                    type="date"
-                                                    value={dateFrom}
-                                                    onChange={(e) => onDateFromChange(e.target.value)}
-                                                    className="h-8 w-32 rounded-md border border-brand-300 bg-white px-2 text-xs font-normal text-gray-700 focus:outline-none"
-                                                    aria-label="Tanggal awal"
-                                                />
-                                                <input
-                                                    type="date"
-                                                    value={dateTo}
-                                                    onChange={(e) => onDateToChange(e.target.value)}
-                                                    className="h-8 w-32 rounded-md border border-brand-300 bg-white px-2 text-xs font-normal text-gray-700 focus:outline-none"
-                                                    aria-label="Tanggal akhir"
-                                                />
-                                            </div>
-                                        </div>
+                                        Tanggal
                                     </TableCell>
-                                    <TableCell isHeader className="px-4 py-3 font-semibold text-black text-start text-theme-xs">Santri</TableCell>
-                                    <TableCell isHeader className="px-4 py-3 font-semibold text-black text-start text-theme-xs">Bulan</TableCell>
-                                    <TableCell isHeader className="px-4 py-3 font-semibold text-black text-start text-theme-xs">Tahun</TableCell>
-                                    <TableCell isHeader className="px-4 py-3 font-semibold text-black text-start text-theme-xs">Nominal</TableCell>
-                                    <TableCell isHeader className="px-4 py-3 font-semibold text-black text-start text-theme-xs">Keterangan</TableCell>
-                                    <TableCell isHeader className="px-4 py-3 font-semibold text-black text-start text-theme-xs">Petugas</TableCell>
+                                    <TableCell isHeader className="px-4 py-3 font-semibold text-black text-start text-theme-xs">
+                                        <SortableHeader
+                                            label="Santri"
+                                            sortKey="student"
+                                            activeKey={sortKey}
+                                            direction={sortDirection}
+                                            onSort={handleSort}
+                                        />
+                                    </TableCell>
+                                    <TableCell isHeader className="px-4 py-3 font-semibold text-black text-start text-theme-xs">
+                                        Bulan
+                                    </TableCell>
+                                    <TableCell isHeader className="px-4 py-3 font-semibold text-black text-start text-theme-xs">
+                                        Tahun
+                                    </TableCell>
+                                    <TableCell isHeader className="px-4 py-3 font-semibold text-black text-start text-theme-xs">
+                                        Nominal
+                                    </TableCell>
+                                    <TableCell isHeader className="px-4 py-3 font-semibold text-black text-start text-theme-xs">
+                                        Keterangan
+                                    </TableCell>
+                                    <TableCell isHeader className="px-4 py-3 font-semibold text-black text-start text-theme-xs">
+                                        Petugas
+                                    </TableCell>
                                     <TableCell isHeader className="px-4 py-3 font-semibold text-black text-start text-theme-xs">Aksi</TableCell>
                                 </TableRow>
                             </TableHeader>
 
                             <TableBody className="divide-y divide-gray-100 dark:divide-white/5">
-                                {filteredData.length === 0 ? (
+                                {sortedData.length === 0 ? (
                                     <TableRow>
                                         <TableCell
                                             colSpan={9}
@@ -250,7 +350,7 @@ export default function KeuanganSppTable({
                                             </TableCell>
 
                                             <TableCell className="px-4 py-3 text-gray-500 text-theme-sm">
-                                                {item.payment_date}
+                                                {formatDate(item.payment_date)}
                                             </TableCell>
 
                                             <TableCell className="px-4 py-3 text-gray-500 text-theme-sm">
@@ -319,7 +419,7 @@ export default function KeuanganSppTable({
                     </div>
                 </div>
                 <Pagination
-                    totalItems={filteredData.length}
+                    totalItems={sortedData.length}
                     currentPage={safeCurrentPage}
                     pageSize={pageSize}
                     onPageChange={setCurrentPage}

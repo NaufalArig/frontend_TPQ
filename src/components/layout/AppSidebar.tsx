@@ -8,6 +8,7 @@ import { useSidebar } from "@/context/SidebarContext";
 import { useUser } from "@/context/UserContext";
 import { BoxCubeIcon, GridIcon, ListIcon, UserCircleIcon, UserIcon, TaskIcon, DollarLineIcon } from "@/icons";
 import { GroupIcon } from "lucide-react";
+import { DatabaseBackup } from "lucide-react";
 
 type NavItem = {
   name: string;
@@ -30,20 +31,22 @@ const AppSidebar: React.FC = () => {
       case "admin":
         return [
           { icon: <GridIcon />, name: "Dashboard", path: "/dashboard" },
-          { icon: <UserCircleIcon />, name: "Santri", path: "/santri" },
-          { icon: <ListIcon />, name: "Guru", path: "/guru" },
+          { icon: <UserCircleIcon />, name: "Kelola Santri", path: "/santri" },
+          { icon: <ListIcon />, name: "Kelola Guru", path: "/guru" },
           { icon: <TaskIcon />, name: "Kategori Keuangan", path: "/kategori-keuangan", },
           { icon: <DollarLineIcon />, name: "Keuangan SPP", path: "/keuangan-spp" },
           { icon: <DollarLineIcon />, name: "Keuangan Pembangunan", path: "/keuangan-pembangunan" },
-          { icon: <UserIcon />, name: "User", path: "/users" },
+          { icon: <UserIcon />, name: "Kelola User", path: "/users" },
           { icon: <ListIcon />, name: "Absensi", path: "/absensi" },
-          { icon: <GridIcon />, name: "Kelas", path: "/kelas", },
-          { icon: <BoxCubeIcon />, name: "Aset", path: "/aset" },
+          { icon: <GridIcon />, name: "Kelola Kelas", path: "/kelas", },
+          { icon: <BoxCubeIcon />, name: "Kelola Aset", path: "/aset" },
           { icon: <TaskIcon />, name: "Activity Log", path: "/activity-logs" },
+          { icon: <DatabaseBackup />, name: "Backup & Restore", path: "/backup-restore" },
         ];
       case "teacher":
         return [
           { icon: <GridIcon />, name: "Dashboard", path: "/dashboard" },
+          { icon: <GridIcon />, name: "Kelas Saya", path: "/kelas" },
           { icon: <UserCircleIcon />, name: "Santri", path: "/santri" },
           { icon: <GroupIcon />, name: "Absensi", path: "/absensi" },
         ];
@@ -60,6 +63,7 @@ const AppSidebar: React.FC = () => {
 
   const menuItems = getMenuByRole();
   const sidebarOpen = isExpanded || isHovered || isMobileOpen;
+  const hideLogo = user?.tpq_id === 2;
 
   return (
     <>
@@ -76,18 +80,20 @@ const AppSidebar: React.FC = () => {
       >
         <div className="flex items-center justify-between p-4 h-[65px]">
           <div className="flex items-center gap-3">
-            <Image
-              src="/images/logo/logo-01.png"
-              alt="logo"
-              width={sidebarOpen ? 50 : 40}
-              height={40}
-              className="flex-shrink-0"
-            />
+            {!hideLogo && (
+              <Image
+                src="/images/logo/logo-01.png"
+                alt="logo"
+                width={sidebarOpen ? 50 : 40}
+                height={40}
+                className="flex-shrink-0"
+              />
+            )}
 
             {sidebarOpen && (
               <div className="flex flex-col leading-tight overflow-hidden">
-                <span className="text-lg font-bold text-gray-800 whitespace-nowrap">
-                  TPQ
+                <span className="text-sm font-bold text-gray-800 whitespace-nowrap truncate max-w-[180px]">
+                  {user?.tpq?.name ?? "TPQ"}
                 </span>
                 <span className="text-xs text-gray-700 whitespace-nowrap">
                   Admin Panel

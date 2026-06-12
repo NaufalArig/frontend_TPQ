@@ -1,5 +1,6 @@
 export type NotifItem = {
     id: number;
+    tpq_id?: number;
 
     student_id?: number | null;
     user_id?: number | null;
@@ -15,6 +16,7 @@ export type NotifItem = {
 
     student?: {
         id: number;
+        tpq_id?: number;
         name: string;
         birth_date?: string | null;
         join_date?: string | null;
@@ -23,6 +25,7 @@ export type NotifItem = {
 
     user?: {
         id: number;
+        tpq_id?: number;
         name: string;
         username?: string;
     } | null;

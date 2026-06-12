@@ -22,8 +22,13 @@ export default function SortableHeader({
     className = "",
 }: Props) {
     const [open, setOpen] = useState(false);
-
     const isActive = activeKey === sortKey;
+
+    const indicator = isActive && direction === "asc"
+        ? "A"
+        : isActive && direction === "desc"
+            ? "Z"
+            : "v";
 
     return (
         <div className={`relative flex items-center justify-between gap-2 ${className}`}>
@@ -40,8 +45,9 @@ export default function SortableHeader({
                         ? "border-brand-500 bg-brand-100 text-brand-700"
                         : "border-gray-300 bg-white text-gray-500 hover:bg-gray-100"
                 }`}
+                aria-label={`Sort ${label}`}
             >
-                {isActive && direction === "asc" ? "↑" : isActive && direction === "desc" ? "↓" : "▾"}
+                {indicator}
             </button>
 
             {open && (

@@ -15,6 +15,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
+import { useUser } from "@/context/UserContext";
 
 function formatRupiah(value: number) {
   return new Intl.NumberFormat("id-ID", {
@@ -37,6 +38,7 @@ function formatTanggal(value?: string | null) {
 export default function DashboardPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const router = useRouter();
+  const { user } = useUser();
 
   const loadDashboardStats = useCallback(async () => {
     const data = await getDashboardStats();
@@ -56,6 +58,299 @@ export default function DashboardPage() {
   }, [loadDashboardStats]);
 
   if (!stats) return <div className="p-4 sm:p-6">Loading...</div>;
+
+  if (stats.role === "teacher") {
+    const teacherDashboard = stats.teacher_dashboard;
+
+    return (
+      <div className="space-y-4 sm:space-y-6 p-2 sm:p-0">
+        <div>
+          <h1 className="text-xl font-bold text-gray-800">
+            Dashboard Guru
+          </h1>
+          <p className="text-sm text-gray-500">
+            Selamat datang, {user?.name}. Berikut ringkasan kelas yang kamu ajar.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          <div className="rounded-2xl border border-gray-200 bg-white p-5">
+            <span className="text-sm text-gray-500">Kelas Diajar</span>
+            <h4 className="mt-2 text-2xl font-bold text-gray-800">
+              {teacherDashboard?.total_classes ?? 0}
+            </h4>
+          </div>
+
+          <div className="rounded-2xl border border-gray-200 bg-white p-5">
+            <span className="text-sm text-gray-500">Santri di Kelas Saya</span>
+            <h4 className="mt-2 text-2xl font-bold text-gray-800">
+              {teacherDashboard?.total_students ?? 0}
+            </h4>
+          </div>
+
+          <div className="rounded-2xl border border-gray-200 bg-white p-5">
+            <span className="text-sm text-gray-500">Absensi Terbaru</span>
+            <h4 className="mt-2 text-2xl font-bold text-gray-800">
+              {teacherDashboard?.latest_attendances?.length ?? 0}
+            </h4>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+          <div className="rounded-2xl border border-gray-200 bg-white p-5">
+            <div className="mb-4 flex items-center justify-between">
+              <h5 className="font-semibold text-gray-800">Kelas yang Diajar</h5>
+              <button
+                onClick={() => router.push("/kelas")}
+                className="text-xs text-blue-500 hover:underline"
+              >
+                Lihat kelas
+              </button>
+            </div>
+
+            {(teacherDashboard?.classes ?? []).length === 0 ? (
+              <p className="py-4 text-center text-sm text-gray-400">
+                Belum ada kelas yang diajar
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {(teacherDashboard?.classes ?? []).map((kelas) => (
+                  <div
+                    key={kelas.id}
+                    className="rounded-xl border border-gray-100 p-4"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h6 className="font-semibold text-gray-800">
+                          {kelas.name}
+                        </h6>
+                        <p className="text-xs text-gray-500">
+                          {kelas.description || "Tidak ada deskripsi"}
+                        </p>
+                      </div>
+
+                      <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-medium text-blue-700">
+                        {kelas.students_count} santri
+                      </span>
+                    </div>
+
+                    <div className="mt-3">
+                      <p className="mb-2 text-xs font-medium text-gray-500">
+                        Santri:
+                      </p>
+
+                      {(kelas.santris ?? []).length === 0 ? (
+                        <p className="text-xs text-gray-400">
+                          Belum ada santri di kelas ini
+                        </p>
+                      ) : (
+                        <div className="flex flex-wrap gap-2">
+                          {(kelas.santris ?? []).slice(0, 6).map((santri) => (
+                            <span
+                              key={santri.id}
+                              className="rounded-full bg-gray-100 px-2 py-1 text-xs text-gray-700"
+                            >
+                              {santri.name}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="rounded-2xl border border-gray-200 bg-white p-5">
+            <div className="mb-4 flex items-center justify-between">
+              <h5 className="font-semibold text-gray-800">Absensi Terkini</h5>
+              <button
+                onClick={() => router.push("/absensi")}
+                className="text-xs text-blue-500 hover:underline"
+              >
+                Buka absensi
+              </button>
+            </div>
+
+            {(teacherDashboard?.latest_attendances ?? []).length === 0 ? (
+              <p className="py-4 text-center text-sm text-gray-400">
+                Belum ada data absensi
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {(teacherDashboard?.latest_attendances ?? []).map((item) => (
+                  <div
+                    key={item.id}
+                    className="flex items-center justify-between rounded-xl border border-gray-100 p-3"
+                  >
+                    <div>
+                      <p className="text-sm font-medium text-gray-800">
+                        {item.student?.name ?? "-"}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {item.student?.study_class?.name ?? "-"} •{" "}
+                        {formatTanggal(item.attendance_date)}
+                      </p>
+                    </div>
+
+                    <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-700">
+                      {item.status}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (stats.role === "treasurer") {
+    const financeDashboard = stats.finance_dashboard;
+    const chartData = (financeDashboard?.finance_chart ?? []).slice(-4).reverse();
+
+    return (
+      <div className="space-y-4 sm:space-y-6 p-2 sm:p-0">
+        <div>
+          <h1 className="text-xl font-bold text-gray-800">
+            Dashboard Bendahara
+          </h1>
+          <p className="text-sm text-gray-500">
+            Ringkasan saldo dan transaksi terbaru.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="rounded-2xl border border-green-200 bg-green-50 p-5">
+            <span className="text-sm text-green-600">SPP Bulan Ini</span>
+            <h4 className="mt-2 break-all text-xl font-bold text-green-700">
+              {formatRupiah(financeDashboard?.tuition_this_month ?? 0)}
+            </h4>
+          </div>
+
+          <div className="rounded-2xl border border-blue-200 bg-blue-50 p-5">
+            <span className="text-sm text-blue-600">
+              Saldo Pembangunan Bulan Ini
+            </span>
+            <h4 className="mt-2 break-all text-xl font-bold text-blue-700">
+              {formatRupiah(financeDashboard?.development_fund_this_month ?? 0)}
+            </h4>
+          </div>
+
+          <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
+            <span className="text-sm text-emerald-600">Saldo Bulan Ini</span>
+            <h4 className="mt-2 break-all text-xl font-bold text-emerald-700">
+              {formatRupiah(financeDashboard?.income_this_month ?? 0)}
+            </h4>
+          </div>
+
+          <div className="rounded-2xl border border-indigo-200 bg-indigo-50 p-5">
+            <span className="text-sm text-indigo-600">Total Saldo</span>
+            <h4 className="mt-2 break-all text-xl font-bold text-indigo-700">
+              {formatRupiah(financeDashboard?.total_income ?? 0)}
+            </h4>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+          <div className="rounded-2xl border border-gray-200 bg-white p-5">
+            <div className="mb-4 flex items-center justify-between">
+              <h5 className="font-semibold text-gray-800">
+                Transaksi Terbaru
+              </h5>
+
+              <div className="flex gap-2">
+                <button
+                  onClick={() => router.push("/keuangan-spp")}
+                  className="text-xs text-blue-500 hover:underline"
+                >
+                  SPP
+                </button>
+                <button
+                  onClick={() => router.push("/keuangan-pembangunan")}
+                  className="text-xs text-blue-500 hover:underline"
+                >
+                  Pembangunan
+                </button>
+              </div>
+            </div>
+
+            {(financeDashboard?.latest_transactions ?? []).length === 0 ? (
+              <p className="py-4 text-center text-sm text-gray-400">
+                Belum ada transaksi
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {(financeDashboard?.latest_transactions ?? []).map((t) => (
+                  <div
+                    key={`${t.type}-${t.id}`}
+                    className="flex items-center justify-between rounded-xl border border-gray-100 p-3"
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium text-gray-800">
+                        {t.type === "tuition"
+                          ? `SPP ${t.student?.name || "-"}`
+                          : t.financial_category?.name || "Pembangunan"}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {formatTanggal(t.payment_date)}
+                      </p>
+                    </div>
+
+                    <span
+                      className={`whitespace-nowrap text-sm font-semibold ${t.transaction_type === "expense"
+                          ? "text-red-600"
+                          : "text-gray-800"
+                        }`}
+                    >
+                      {t.transaction_type === "expense" ? "- " : ""}
+                      {formatRupiah(t.amount)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="rounded-2xl border border-gray-200 bg-white p-5">
+            <h5 className="mb-4 font-semibold text-gray-800">
+              Grafik Keuangan 4 Bulan Terakhir
+            </h5>
+
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                  <XAxis dataKey="month_label" tick={{ fontSize: 10 }} />
+                  <YAxis
+                    tick={{ fontSize: 10 }}
+                    width={52}
+                    tickFormatter={(v) =>
+                      new Intl.NumberFormat("id-ID", {
+                        notation: "compact",
+                        compactDisplay: "short",
+                      }).format(Number(v || 0))
+                    }
+                  />
+                  <Tooltip
+                    formatter={(value: unknown) => {
+                      const amount = Number(value ?? 0);
+                      return formatRupiah(amount);
+                    }}
+                  />
+                  <Legend wrapperStyle={{ fontSize: "12px" }} />
+                  <Bar dataKey="tuition" name="SPP" fill="#22c55e" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="development_fund" name="Pembangunan" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4 sm:space-y-6 p-2 sm:p-0">
@@ -327,24 +622,23 @@ export default function DashboardPage() {
                       <td className="py-2">
                         <span
                           className={`px-2 py-0.5 rounded-full text-xs font-medium ${t.type === "tuition" || t.transaction_type !== "expense"
-                              ? "bg-green-100 text-green-700"
-                              : "bg-red-100 text-red-700"
+                            ? "bg-green-100 text-green-700"
+                            : "bg-red-100 text-red-700"
                             }`}
                         >
                           {t.type === "tuition"
                             ? "SPP"
                             : t.transaction_type === "expense"
-                            ? "Pengeluaran"
-                            : "Pemasukan"}
+                              ? "Pengeluaran"
+                              : "Pemasukan"}
                         </span>
                       </td>
 
                       <td
-                        className={`py-2 text-right font-medium pr-4 sm:pr-0 whitespace-nowrap ${
-                          t.transaction_type === "expense"
-                            ? "text-red-600"
-                            : "text-gray-700 dark:text-gray-300"
-                        }`}
+                        className={`py-2 text-right font-medium pr-4 sm:pr-0 whitespace-nowrap ${t.transaction_type === "expense"
+                          ? "text-red-600"
+                          : "text-gray-700 dark:text-gray-300"
+                          }`}
                       >
                         {t.transaction_type === "expense" ? "- " : ""}
                         {formatRupiah(t.amount)}

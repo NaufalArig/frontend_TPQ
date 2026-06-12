@@ -11,8 +11,6 @@ import { useToast } from "@/hooks/useToast";
 import { ChevronDownIcon } from "@/icons";
 import { useRouter } from "next/navigation";
 import { Santri, SantriFormData } from "@/types/santri";
-import { getKelas } from "@/services/kelas";
-import { Kelas } from "@/types/kelas";
 
 type Props = {
     initialData?: Santri;
@@ -137,7 +135,6 @@ export default function SantriForm({ initialData, onSubmit, onSuccess }: Props) 
             : null
     );
 
-    const [kelasList, setKelasList] = useState<Kelas[]>([]);
     const [provinces, setProvinces] = useState<RegionOption[]>([]);
     const [regencies, setRegencies] = useState<RegionOption[]>([]);
     const [districts, setDistricts] = useState<RegionOption[]>([]);
@@ -145,14 +142,6 @@ export default function SantriForm({ initialData, onSubmit, onSuccess }: Props) 
     const [selectedProvinceCode, setSelectedProvinceCode] = useState("");
     const [selectedRegencyCode, setSelectedRegencyCode] = useState("");
     const [selectedDistrictCode, setSelectedDistrictCode] = useState("");
-
-    useEffect(() => {
-        getKelas()
-            .then((data) => {
-                setKelasList(data.filter((item: Kelas) => item.status === "active"));
-            })
-            .catch(console.error);
-    }, []);
 
     const [pos, setPos] = useState({ x: 0, y: 0 });
     const [scale, setScale] = useState(1);
@@ -619,7 +608,7 @@ export default function SantriForm({ initialData, onSubmit, onSuccess }: Props) 
                                 className="hidden"
                                 onChange={(e) => {
                                     const file = e.target.files?.[0] ?? null;
-                                    setForm(prev => ({ ...prev, foto: file }));
+                                    setForm(prev => ({ ...prev, photo: file }));
                                     if (file) {
                                         setPreview(URL.createObjectURL(file));
                                         setPos({ x: 0, y: 0 });
@@ -646,21 +635,14 @@ export default function SantriForm({ initialData, onSubmit, onSuccess }: Props) 
                     <div className="w-full flex-1 space-y-4">
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
-                                <Label>Kelas</Label>
-                                <select
-                                    value={form.study_class_id || ""}
-                                    onChange={(e) => update("study_class_id", e.target.value)}
-                                    className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm"
-                                >
-                                    <option value="">Pilih kelas</option>
-                                    {kelasList.map((kelas) => (
-                                        <option key={kelas.id} value={kelas.id}>
-                                            {kelas.name}
-                                        </option>
-                                    ))}
-                                </select>
+                                <Label>Nama Santri <span className="text-error-500">*</span></Label>
+                                <Input
+                                    type="text"
+                                    value={form.name}
+                                    placeholder="Masukkan nama santri"
+                                    onChange={(e) => update("name", e.target.value)}
+                                />
                             </div>
-
                             <div>
                                 <Label>Jenis Santri <span className="text-error-500">*</span></Label>
                                 <div className="relative">
@@ -679,15 +661,14 @@ export default function SantriForm({ initialData, onSubmit, onSuccess }: Props) 
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
-                                <Label>Nama Santri <span className="text-error-500">*</span></Label>
+                                <Label>NISN</Label>
                                 <Input
                                     type="text"
-                                    value={form.name}
-                                    placeholder="Masukkan nama santri"
-                                    onChange={(e) => update("name", e.target.value)}
+                                    value={form.nisn || ""}
+                                    placeholder="Masukkan NISN"
+                                    onChange={(e) => update("nisn", e.target.value)}
                                 />
                             </div>
-
                             <div>
                                 <Label>Jenis Kelamin <span className="text-error-500">*</span></Label>
                                 <div className="relative">
@@ -701,8 +682,8 @@ export default function SantriForm({ initialData, onSubmit, onSuccess }: Props) 
                                     <span className="absolute text-gray-500 -translate-y-1/2 pointer-events-none right-3 top-1/2 dark:text-gray-400">
                                         <ChevronDownIcon />
                                     </span>
-                                </div>
-                            </div>
+                                </div></div>
+
                         </div>
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -749,17 +730,7 @@ export default function SantriForm({ initialData, onSubmit, onSuccess }: Props) 
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                            <div>
-                                <Label>NISN</Label>
-                                <Input
-                                    type="text"
-                                    value={form.nisn || ""}
-                                    placeholder="Masukkan NISN"
-                                    onChange={(e) => update("nisn", e.target.value)}
-                                />
-                            </div>
-
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                                 <Label>NIK</Label>
                                 <Input
@@ -790,7 +761,7 @@ export default function SantriForm({ initialData, onSubmit, onSuccess }: Props) 
                                     onChange={(e) =>
                                         setForm((prev) => ({
                                             ...prev,
-                                            kk: e.target.files?.[0] ?? null,
+                                            family_card_file: e.target.files?.[0] ?? null,
                                         }))
                                     }
                                 />
@@ -804,7 +775,7 @@ export default function SantriForm({ initialData, onSubmit, onSuccess }: Props) 
                                     onChange={(e) =>
                                         setForm((prev) => ({
                                             ...prev,
-                                            akte: e.target.files?.[0] ?? null,
+                                            birth_certificate_file: e.target.files?.[0] ?? null,
                                         }))
                                     }
                                 />
@@ -873,6 +844,38 @@ export default function SantriForm({ initialData, onSubmit, onSuccess }: Props) 
                                     value={form.hamlet || ""}
                                     placeholder="Masukkan dusun atau jalan"
                                     onChange={(e) => update("hamlet", e.target.value)}
+                                />
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div>
+                                <Label>Nama Sekolah Formal</Label>
+                                <Input
+                                    type="text"
+                                    value={form.formal_school || ""}
+                                    placeholder="Contoh: SDN 001 Batam"
+                                    onChange={(e) => update("formal_school", e.target.value)}
+                                />
+                            </div>
+
+                            <div>
+                                <Label>Kelas Formal</Label>
+                                <Input
+                                    type="text"
+                                    value={form.formal_class || ""}
+                                    placeholder="Contoh: 3A"
+                                    onChange={(e) => update("formal_class", e.target.value)}
+                                />
+                            </div>
+
+                            <div>
+                                <Label>NPSN</Label>
+                                <Input
+                                    type="text"
+                                    value={form.npsn || ""}
+                                    placeholder="Masukkan NPSN"
+                                    onChange={(e) => update("npsn", e.target.value)}
                                 />
                             </div>
                         </div>

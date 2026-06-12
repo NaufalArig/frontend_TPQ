@@ -17,8 +17,7 @@ import {
 
 export default function KeuanganSppPage() {
     const [search, setSearch] = useState("");
-    const [dateFrom, setDateFrom] = useState("");
-    const [dateTo, setDateTo] = useState("");
+    const [filterDate, setFilterDate] = useState("");
     const [previewOpen, setPreviewOpen] = useState(false);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const [previewLoading, setPreviewLoading] = useState(false);
@@ -27,8 +26,8 @@ export default function KeuanganSppPage() {
     const laporanParams: LaporanParams = {
         type: "spp",
         search: search.trim(),
-        date_from: dateFrom,
-        date_to: dateTo,
+        date_from: filterDate,
+        date_to: filterDate,
     };
 
     const closePreview = () => {
@@ -122,8 +121,7 @@ export default function KeuanganSppPage() {
                                     type="button"
                                     onClick={() => {
                                         setSearch("");
-                                        setDateFrom("");
-                                        setDateTo("");
+                                        setFilterDate("");
                                     }}
                                     className="w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 lg:w-auto"
                                 >
@@ -134,10 +132,8 @@ export default function KeuanganSppPage() {
                     >
                         <KeuanganSppTable
                             search={search}
-                            dateFrom={dateFrom}
-                            dateTo={dateTo}
-                            onDateFromChange={setDateFrom}
-                            onDateToChange={setDateTo}
+                            filterDate={filterDate}
+                            onFilterDateChange={setFilterDate}
                         />
                     </ComponentCard>
                 </div>

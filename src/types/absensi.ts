@@ -23,6 +23,7 @@ export type AbsensiSantriItem = {
 
 export type AbsensiSantriResponse = {
     attendance_date: string;
+    study_class_id?: string | number | null;
     students: AbsensiSantriItem[];
 };
 

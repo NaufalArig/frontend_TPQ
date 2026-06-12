@@ -17,14 +17,16 @@ import {
 } from "@/services/keuangan-pembangunan";
 import { KeuanganPembangunan } from "@/types/keuangan-pembangunan";
 import Pagination from "@/components/ui/pagination/Pagination";
+import SortableHeader, {
+    SortDirection,
+} from "@/components/ui/table/SortableHeader";
+import DatePicker from "@/components/form/date-picker";
 
 type Props = {
     search: string;
-    dateFrom: string;
-    dateTo: string;
+    filterDate: string;
     transactionType: "" | "income" | "expense";
-    onDateFromChange: (value: string) => void;
-    onDateToChange: (value: string) => void;
+    onFilterDateChange: (value: string) => void;
     onTransactionTypeChange: (value: "" | "income" | "expense") => void;
 };
 
@@ -36,10 +38,15 @@ function formatRupiah(value: number | string) {
     }).format(Number(value || 0));
 }
 
-function formatDate(value?: string | null) {
-    if (!value) return "-";
+function getDateOnly(value?: string | null) {
+    return value ? value.slice(0, 10) : "";
+}
 
-    const date = new Date(value);
+function formatDate(value?: string | null) {
+    const dateOnly = getDateOnly(value);
+    if (!dateOnly) return "-";
+
+    const date = new Date(`${dateOnly}T00:00:00`);
 
     if (Number.isNaN(date.getTime())) return "-";
 
@@ -56,17 +63,17 @@ function getCategoryName(item: KeuanganPembangunan) {
 
 export default function KeuanganPembangunanTable({
     search,
-    dateFrom,
-    dateTo,
+    filterDate,
     transactionType,
-    onDateFromChange,
-    onDateToChange,
+    onFilterDateChange,
     onTransactionTypeChange,
 }: Props) {
     const [data, setData] = useState<KeuanganPembangunan[]>([]);
     const [loading, setLoading] = useState(true);
     const [currentPage, setCurrentPage] = useState(1);
     const [pageSize, setPageSize] = useState(10);
+    const [sortKey, setSortKey] = useState<string | null>(null);
+    const [sortDirection, setSortDirection] = useState<SortDirection>(null);
     const { toast, showToast, hideToast } = useToast();
     const router = useRouter();
 
@@ -87,10 +94,16 @@ export default function KeuanganPembangunanTable({
             .finally(() => setLoading(false));
     }, []);
 
+    const handleSort = (key: string, direction: SortDirection) => {
+        setSortKey(direction ? key : null);
+        setSortDirection(direction);
+        setCurrentPage(1);
+    };
+
     const filteredData = data.filter((item) => {
         const keyword = search.toLowerCase();
-        const matchDateFrom = !dateFrom || item.payment_date >= dateFrom;
-        const matchDateTo = !dateTo || item.payment_date <= dateTo;
+        const paymentDate = getDateOnly(item.payment_date);
+        const matchDate = !filterDate || paymentDate === filterDate;
         const matchTransactionType =
             transactionType === "" || item.transaction_type === transactionType;
         const matchSearch =
@@ -102,9 +115,10 @@ export default function KeuanganPembangunanTable({
             (item.note || "").toLowerCase().includes(keyword) ||
             (item.user?.name || "").toLowerCase().includes(keyword) ||
             String(item.amount).toLowerCase().includes(keyword) ||
-            item.payment_date.toLowerCase().includes(keyword);
+            formatDate(item.payment_date).toLowerCase().includes(keyword) ||
+            paymentDate.includes(keyword);
 
-        return matchSearch && matchDateFrom && matchDateTo && matchTransactionType;
+        return matchSearch && matchDate && matchTransactionType;
     });
 
     const totalPemasukan = filteredData.reduce((total, item) => {
@@ -124,10 +138,49 @@ export default function KeuanganPembangunanTable({
     }, 0);
 
     const saldoPembangunan = totalPemasukan - totalPengeluaran;
-    const totalPages = Math.max(1, Math.ceil(filteredData.length / pageSize));
+
+    const sortedData = [...filteredData].sort((a, b) => {
+        if (!sortKey || !sortDirection) return 0;
+
+        const getValue = (item: KeuanganPembangunan) => {
+            switch (sortKey) {
+                case "payment_date":
+                    return item.payment_date || "";
+                case "transaction_type":
+                    return item.transaction_type === "expense" ? "Pengeluaran" : "Pemasukan";
+                case "category":
+                    return getCategoryName(item);
+                case "amount":
+                    return Number(item.amount || 0);
+                case "note":
+                    return item.note || "";
+                case "user":
+                    return item.user?.name || "";
+                default:
+                    return "";
+            }
+        };
+
+        const valueA = getValue(a);
+        const valueB = getValue(b);
+
+        if (typeof valueA === "number" && typeof valueB === "number") {
+            return sortDirection === "asc" ? valueA - valueB : valueB - valueA;
+        }
+
+        const compare = String(valueA).localeCompare(String(valueB), "id", {
+            numeric: true,
+            sensitivity: "base",
+        });
+
+        return sortDirection === "asc" ? compare : -compare;
+    });
+
+    const totalPages = Math.max(1, Math.ceil(sortedData.length / pageSize));
     const safeCurrentPage = Math.min(currentPage, totalPages);
     const pageStart = (safeCurrentPage - 1) * pageSize;
-    const paginatedData = filteredData.slice(pageStart, pageStart + pageSize);
+    const paginatedData = sortedData.slice(pageStart, pageStart + pageSize);
+    const hasActiveFilter = filterDate !== "" || transactionType !== "";
 
     const handleDeleteConfirm = async () => {
         if (!deleteModal.id) return;
@@ -237,6 +290,53 @@ export default function KeuanganPembangunanTable({
                 </div>
             </div>
 
+            <div className="mb-3 flex flex-wrap items-center gap-3">
+                <div className="w-full sm:w-52">
+                    <DatePicker
+                        key={filterDate || "empty-pembangunan-filter-date"}
+                        id="keuangan-pembangunan-filter-date"
+                        placeholder="Pilih tanggal"
+                        defaultDate={filterDate || undefined}
+                        onChange={(_, currentDateString) => {
+                            onFilterDateChange(currentDateString || "");
+                            setCurrentPage(1);
+                        }}
+                    />
+                </div>
+
+                <select
+                    value={transactionType}
+                    onChange={(e) => {
+                        onTransactionTypeChange(e.target.value as "" | "income" | "expense");
+                        setCurrentPage(1);
+                    }}
+                    className="h-10 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10"
+                    aria-label="Filter jenis transaksi"
+                >
+                    <option value="">Semua Jenis</option>
+                    <option value="income">Pemasukan</option>
+                    <option value="expense">Pengeluaran</option>
+                </select>
+
+                {hasActiveFilter && (
+                    <button
+                        type="button"
+                        onClick={() => {
+                            onFilterDateChange("");
+                            onTransactionTypeChange("");
+                            setCurrentPage(1);
+                        }}
+                        className="h-10 rounded-lg border border-gray-200 px-3 text-sm font-medium text-gray-600 hover:bg-gray-50"
+                    >
+                        Reset Filter
+                    </button>
+                )}
+
+                <span className="ml-auto text-xs text-gray-400">
+                    {sortedData.length} data ditemukan
+                </span>
+            </div>
+
             <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/5 dark:bg-white/3">
                 <div className="max-w-full overflow-x-auto">
                     <div className="min-w-[1120px]">
@@ -245,50 +345,35 @@ export default function KeuanganPembangunanTable({
                                 <TableRow>
                                     <TableCell isHeader className="px-4 py-3 font-semibold text-black text-start text-theme-xs">No</TableCell>
                                     <TableCell isHeader className="px-4 py-3 font-semibold text-black text-start text-theme-xs">
-                                        <div className="space-y-2">
-                                            <span>Tanggal</span>
-                                            <div className="flex gap-1">
-                                                <input
-                                                    type="date"
-                                                    value={dateFrom}
-                                                    onChange={(e) => onDateFromChange(e.target.value)}
-                                                    className="h-8 w-32 rounded-md border border-brand-300 bg-white px-2 text-xs font-normal text-gray-700 focus:outline-none"
-                                                    aria-label="Tanggal awal"
-                                                />
-                                                <input
-                                                    type="date"
-                                                    value={dateTo}
-                                                    onChange={(e) => onDateToChange(e.target.value)}
-                                                    className="h-8 w-32 rounded-md border border-brand-300 bg-white px-2 text-xs font-normal text-gray-700 focus:outline-none"
-                                                    aria-label="Tanggal akhir"
-                                                />
-                                            </div>
-                                        </div>
+                                        Tanggal
                                     </TableCell>
                                     <TableCell isHeader className="px-4 py-3 font-semibold text-black text-start text-theme-xs">
-                                        <div className="space-y-2">
-                                            <span>Jenis</span>
-                                            <select
-                                                value={transactionType}
-                                                onChange={(e) => onTransactionTypeChange(e.target.value as "" | "income" | "expense")}
-                                                className="h-8 w-full rounded-md border border-brand-300 bg-white px-2 text-xs font-normal text-gray-700 focus:outline-none"
-                                            >
-                                                <option value="">Semua</option>
-                                                <option value="income">Pemasukan</option>
-                                                <option value="expense">Pengeluaran</option>
-                                            </select>
-                                        </div>
+                                        Jenis
                                     </TableCell>
-                                    <TableCell isHeader className="px-4 py-3 font-semibold text-black text-start text-theme-xs">Kategori</TableCell>
-                                    <TableCell isHeader className="px-4 py-3 font-semibold text-black text-start text-theme-xs">Nominal</TableCell>
-                                    <TableCell isHeader className="px-4 py-3 font-semibold text-black text-start text-theme-xs">Keterangan</TableCell>
-                                    <TableCell isHeader className="px-4 py-3 font-semibold text-black text-start text-theme-xs">Petugas</TableCell>
+                                    <TableCell isHeader className="px-4 py-3 font-semibold text-black text-start text-theme-xs">
+                                        <SortableHeader
+                                            label="Kategori"
+                                            sortKey="category"
+                                            activeKey={sortKey}
+                                            direction={sortDirection}
+                                            onSort={handleSort}
+                                        />
+                                    </TableCell>
+                                    <TableCell isHeader className="px-4 py-3 font-semibold text-black text-start text-theme-xs">
+                                        Nominal
+                                    </TableCell>
+                                    <TableCell isHeader className="px-4 py-3 font-semibold text-black text-start text-theme-xs">
+                                        Keterangan
+                                    </TableCell>
+                                    <TableCell isHeader className="px-4 py-3 font-semibold text-black text-start text-theme-xs">
+                                        Petugas
+                                    </TableCell>
                                     <TableCell isHeader className="px-4 py-3 font-semibold text-black text-start text-theme-xs">Aksi</TableCell>
                                 </TableRow>
                             </TableHeader>
 
                             <TableBody className="divide-y divide-gray-100 dark:divide-white/5">
-                                {filteredData.length === 0 ? (
+                                {sortedData.length === 0 ? (
                                     <TableRow>
                                         <TableCell
                                             colSpan={8}
@@ -384,7 +469,7 @@ export default function KeuanganPembangunanTable({
                     </div>
                 </div>
                 <Pagination
-                    totalItems={filteredData.length}
+                    totalItems={sortedData.length}
                     currentPage={safeCurrentPage}
                     pageSize={pageSize}
                     onPageChange={setCurrentPage}

@@ -19,6 +19,7 @@ export default function LoginPage() {
     const [loading, setLoading] = useState(false);
     const [showSuccess, setShowSuccess] = useState(false);
     const { toast, showToast, hideToast } = useToast();
+    const [loginName, setLoginName] = useState("");
 
     const handleLogin = async (e: React.SyntheticEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -37,11 +38,15 @@ export default function LoginPage() {
 
         try {
             const res = await login(username, password);
-
+            
             localStorage.clear();
             Cookies.remove("token");
-            Cookies.set("token", res.token, { expires: 1, sameSite: "lax" });
-
+            Cookies.set("token", res.token, {
+                expires: isChecked ? 7 : 1,
+                sameSite: "lax",
+            });
+            
+            setLoginName(res.user?.tpq?.name ?? username);
             setShowSuccess(true);
 
             setTimeout(() => {
@@ -92,7 +97,10 @@ export default function LoginPage() {
                             Masuk Berhasil!
                         </h3>
                         <p className="text-sm text-gray-500 mb-5">
-                            Selamat datang kembali, <span className="font-semibold text-gray-700 capitalize">{username}</span>
+                            Selamat datang kembali,{" "}
+                            <span className="font-semibold text-gray-700 capitalize">
+                                {loginName || username}
+                            </span>
                         </p>
 
                         <div className="w-48 h-1.5 bg-gray-100 rounded-full overflow-hidden">
@@ -121,9 +129,9 @@ export default function LoginPage() {
                         >
                             <div className="space-y-6">
                                 <div>
-                                    <Label>Username<span className="text-error-500">*</span></Label>
+                                    <Label>Nama Pengguna<span className="text-error-500">*</span></Label>
                                     <Input
-                                        placeholder="Masukkan username"
+                                        placeholder="Masukkan nama penggunamu"
                                         type="text"
                                         value={username}
                                         onChange={(e) => setUsername(e.target.value)}
@@ -153,8 +161,8 @@ export default function LoginPage() {
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-3">
                                         <Checkbox checked={isChecked} onChange={setIsChecked} />
-                                        <span className="block font-normal text-gray-700 text-theme-sm dark:text-gray-400">
-                                            Keep me logged in
+                                        <span className="block font-normal text-gray-700 text-theme-sm">
+                                            Ingat Saya
                                         </span>
                                     </div>
                                 </div>

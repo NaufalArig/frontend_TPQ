@@ -1,8 +1,15 @@
 export type UserRole = "admin" | "teacher" | "treasurer";
 export type UserStatus = "active" | "inactive";
 
+export type UserTpq = {
+  id: number;
+  name: string;
+};
+
 export type User = {
   id: number;
+  tpq_id?: number | null;
+  tpq?: UserTpq | null;
   name: string;
   username: string;
   email: string | null;
@@ -26,11 +33,13 @@ export type PasswordFormData = {
   password_confirmation: string;
 };
 
+export type UserFormRole = "admin" | "teacher" | "treasurer";
+
 export type UserFormData = {
   name: string;
   username: string;
   email?: string | null;
   password?: string;
-  role: UserRole | "";
+  role: UserFormRole | "";
   status: UserStatus | "";
 };

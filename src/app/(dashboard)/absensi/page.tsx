@@ -16,6 +16,11 @@ import {
 } from "@/components/ui/table";
 import { useRouter } from "next/navigation";
 import DatePicker from "@/components/form/date-picker";
+import SortableHeader, {
+    SortDirection,
+} from "@/components/ui/table/SortableHeader";
+import { getKelas } from "@/services/kelas";
+import { Kelas } from "@/types/kelas";
 
 const getTodayLocal = () => {
     const date = new Date();
@@ -38,15 +43,49 @@ export default function AbsensiPage() {
     const [saving, setSaving] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [hasAbsensi, setHasAbsensi] = useState(false);
+    const [sortKey, setSortKey] = useState<string | null>(null);
+    const [sortDirection, setSortDirection] = useState<SortDirection>(null);
+    const [kelasList, setKelasList] = useState<Kelas[]>([]);
+    const [selectedClassId, setSelectedClassId] = useState("");
 
     const router = useRouter();
     const { toast, showToast, hideToast } = useToast();
+
+    useEffect(() => {
+        getKelas()
+            .then((res) => {
+                setKelasList((res ?? []).filter((kelas: Kelas) => kelas.status === "active"));
+            })
+            .catch((error) => {
+                console.error(error);
+                showToast("Gagal mengambil data kelas", "error");
+            });
+    }, [showToast]);
+
+    const markAllPresent = () => {
+        setData((prev) =>
+            prev.map((item) => ({
+                ...item,
+                status: "present",
+                note: "",
+            }))
+        );
+
+        showToast("Semua santri ditandai hadir", "success");
+    };
 
     const loadAbsensi = useCallback(async () => {
         try {
             setLoading(true);
 
-            const res = await getAbsensiSantri(attendanceDate);
+            if (!selectedClassId) {
+                setData([]);
+                setHasAbsensi(false);
+                setIsEditing(false);
+                return;
+            }
+
+            const res = await getAbsensiSantri(attendanceDate, selectedClassId);
             const students = res.students ?? [];
 
             const rows: AbsensiRow[] = students.map((item) => ({
@@ -69,7 +108,7 @@ export default function AbsensiPage() {
         } finally {
             setLoading(false);
         }
-    }, [attendanceDate, showToast]);
+    }, [attendanceDate, selectedClassId, showToast]);
 
     useEffect(() => {
         const timeout = window.setTimeout(() => {
@@ -94,6 +133,45 @@ export default function AbsensiPage() {
             )
         );
     };
+
+    const handleSort = (key: string, direction: SortDirection) => {
+        setSortKey(direction ? key : null);
+        setSortDirection(direction);
+    };
+
+    const statusLabel = (status: AttendanceStatus) => {
+        if (status === "present") return "Hadir";
+        if (status === "permission") return "Izin";
+        if (status === "sick") return "Sakit";
+        if (status === "absent") return "Alpa";
+        return status;
+    };
+
+    const sortedData = [...data].sort((a, b) => {
+        if (!sortKey || !sortDirection) return 0;
+
+        const getValue = (item: AbsensiRow) => {
+            switch (sortKey) {
+                case "name":
+                    return item.name || "";
+                case "class":
+                    return item.study_class?.name || "";
+                case "status":
+                    return statusLabel(item.status);
+                case "note":
+                    return item.note || "";
+                default:
+                    return "";
+            }
+        };
+
+        const compare = String(getValue(a)).localeCompare(String(getValue(b)), "id", {
+            numeric: true,
+            sensitivity: "base",
+        });
+
+        return sortDirection === "asc" ? compare : -compare;
+    });
 
     const handleSave = async () => {
         try {
@@ -124,8 +202,8 @@ export default function AbsensiPage() {
 
             showToast(
                 err.response?.data?.message ||
-                    err.message ||
-                    "Gagal menyimpan absensi",
+                err.message ||
+                "Gagal menyimpan absensi",
                 "error"
             );
         } finally {
@@ -140,17 +218,32 @@ export default function AbsensiPage() {
             <ComponentCard
                 title="Form Absensi Santri"
                 action={
-                    <div className="w-full sm:w-52">
-                        <DatePicker
-                            key={attendanceDate}
-                            id="attendance-date"
-                            placeholder="Pilih tanggal"
-                            defaultDate={attendanceDate}
-                            useTodayDefault
-                            onChange={(_, currentDateString) => {
-                                setAttendanceDate(currentDateString || getTodayLocal());
-                            }}
-                        />
+                    <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center">
+                        <select
+                            value={selectedClassId}
+                            onChange={(e) => setSelectedClassId(e.target.value)}
+                            className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm text-gray-700 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 sm:w-56"
+                        >
+                            <option value="">Pilih kelas</option>
+                            {kelasList.map((kelas) => (
+                                <option key={kelas.id} value={kelas.id}>
+                                    {kelas.name}
+                                </option>
+                            ))}
+                        </select>
+
+                        <div className="w-full sm:w-52">
+                            <DatePicker
+                                key={attendanceDate}
+                                id="attendance-date"
+                                placeholder="Pilih tanggal"
+                                defaultDate={attendanceDate}
+                                useTodayDefault
+                                onChange={(_, currentDateString) => {
+                                    setAttendanceDate(currentDateString || getTodayLocal());
+                                }}
+                            />
+                        </div>
                     </div>
                 }
             >
@@ -158,7 +251,9 @@ export default function AbsensiPage() {
                     <p>Loading data absensi...</p>
                 ) : data.length === 0 ? (
                     <p className="text-sm text-gray-500">
-                        Tidak ada santri aktif untuk diabsen.
+                        {!selectedClassId
+                            ? "Pilih kelas terlebih dahulu untuk menampilkan santri."
+                            : "Tidak ada santri aktif di kelas ini."}
                     </p>
                 ) : (
                     <>
@@ -166,22 +261,32 @@ export default function AbsensiPage() {
                             <Table>
                                 <TableHeader className="border-b border-brand-300 bg-brand-100">
                                     <TableRow>
-                                        {["No", "Nama Santri", "Kelas", "Status", "Keterangan"].map(
-                                            (h) => (
-                                                <TableCell
-                                                    key={h}
-                                                    isHeader
-                                                    className="px-4 py-3 font-semibold text-black text-start text-theme-xs dark:text-gray-400"
-                                                >
-                                                    {h}
-                                                </TableCell>
-                                            )
-                                        )}
+                                        <TableCell isHeader className="px-4 py-3 font-semibold text-black text-start text-theme-xs dark:text-gray-400">
+                                            No
+                                        </TableCell>
+                                        <TableCell isHeader className="px-4 py-3 font-semibold text-black text-start text-theme-xs dark:text-gray-400">
+                                            <SortableHeader
+                                                label="Nama Santri"
+                                                sortKey="name"
+                                                activeKey={sortKey}
+                                                direction={sortDirection}
+                                                onSort={handleSort}
+                                            />
+                                        </TableCell>
+                                        <TableCell isHeader className="px-4 py-3 font-semibold text-black text-start text-theme-xs dark:text-gray-400">
+                                            Kelas
+                                        </TableCell>
+                                        <TableCell isHeader className="px-4 py-3 font-semibold text-black text-start text-theme-xs dark:text-gray-400">
+                                            Status
+                                        </TableCell>
+                                        <TableCell isHeader className="px-4 py-3 font-semibold text-black text-start text-theme-xs dark:text-gray-400">
+                                            Keterangan
+                                        </TableCell>
                                     </TableRow>
                                 </TableHeader>
 
                                 <TableBody className="divide-y divide-gray-100 dark:divide-white/5">
-                                    {data.map((item, index) => (
+                                    {sortedData.map((item, index) => (
                                         <TableRow key={item.id}>
                                             <TableCell className="px-4 py-3 text-gray-500 text-theme-sm dark:text-gray-400">
                                                 {index + 1}
@@ -240,6 +345,16 @@ export default function AbsensiPage() {
                                 Riwayat Absensi
                             </button>
 
+                            {(!hasAbsensi || isEditing) && (
+                                <button
+                                    onClick={markAllPresent}
+                                    type="button"
+                                    className="w-full rounded-lg bg-green-500 px-6 py-2.5 text-sm font-medium text-white hover:bg-green-600 sm:w-auto"
+                                >
+                                    Tandai Semua Hadir
+                                </button>
+                            )}
+
                             {hasAbsensi && !isEditing ? (
                                 <button
                                     onClick={() => setIsEditing(true)}
@@ -256,8 +371,8 @@ export default function AbsensiPage() {
                                     {saving
                                         ? "Menyimpan..."
                                         : hasAbsensi
-                                        ? "Update Absensi"
-                                        : "Simpan Absensi"}
+                                            ? "Update Absensi"
+                                            : "Simpan Absensi"}
                                 </button>
                             )}
                         </div>

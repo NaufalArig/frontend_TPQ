@@ -5,6 +5,9 @@ import {
     useContext,
     useEffect,
     useState,
+    type Dispatch,
+    type ReactNode,
+    type SetStateAction,
 } from "react";
 
 import Cookies from "js-cookie";
@@ -14,47 +17,64 @@ import { User } from "@/types/user";
 type UserContextType = {
     user: User | null;
     loading: boolean;
-    setUser: React.Dispatch<React.SetStateAction<User | null>>;
+    setUser: Dispatch<SetStateAction<User | null>>;
 };
 
 const UserContext = createContext<UserContextType>({
     user: null,
     loading: true,
-    setUser: () => { },
+    setUser: () => {},
 });
 
 export const UserProvider = ({
     children,
 }: {
-    children: React.ReactNode;
+    children: ReactNode;
 }) => {
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+        let isMounted = true;
+
         const init = async () => {
             try {
                 const token = Cookies.get("token");
 
                 if (!token) {
-                    setUser(null);
-                    setLoading(false);
+                    if (isMounted) {
+                        setUser(null);
+                        setLoading(false);
+                    }
+
                     return;
                 }
 
                 const data = await getUser();
 
-                setUser(data);
+                if (isMounted) {
+                    setUser(data);
+                }
             } catch (err) {
                 console.log("USER ERROR:", err);
+
                 Cookies.remove("token");
-                setUser(null);
+
+                if (isMounted) {
+                    setUser(null);
+                }
             } finally {
-                setLoading(false);
+                if (isMounted) {
+                    setLoading(false);
+                }
             }
         };
 
         init();
+
+        return () => {
+            isMounted = false;
+        };
     }, []);
 
     return (

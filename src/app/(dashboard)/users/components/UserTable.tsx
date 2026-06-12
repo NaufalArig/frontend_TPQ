@@ -275,52 +275,28 @@ export default function UserTable({ search }: Props) {
                                         isHeader
                                         className="px-4 py-3 font-semibold text-black text-start text-theme-xs dark:text-gray-400"
                                     >
-                                        <SortableHeader
-                                            label="Username"
-                                            sortKey="username"
-                                            activeKey={sortKey}
-                                            direction={sortDirection}
-                                            onSort={handleSort}
-                                        />
+                                        Username
                                     </TableCell>
 
                                     <TableCell
                                         isHeader
                                         className="px-4 py-3 font-semibold text-black text-start text-theme-xs dark:text-gray-400"
                                     >
-                                        <SortableHeader
-                                            label="Email"
-                                            sortKey="email"
-                                            activeKey={sortKey}
-                                            direction={sortDirection}
-                                            onSort={handleSort}
-                                        />
+                                        Email
                                     </TableCell>
 
                                     <TableCell
                                         isHeader
                                         className="px-4 py-3 font-semibold text-black text-start text-theme-xs dark:text-gray-400"
                                     >
-                                        <SortableHeader
-                                            label="Role"
-                                            sortKey="role"
-                                            activeKey={sortKey}
-                                            direction={sortDirection}
-                                            onSort={handleSort}
-                                        />
+                                        Role
                                     </TableCell>
 
                                     <TableCell
                                         isHeader
                                         className="px-4 py-3 font-semibold text-black text-start text-theme-xs dark:text-gray-400"
                                     >
-                                        <SortableHeader
-                                            label="Status"
-                                            sortKey="status"
-                                            activeKey={sortKey}
-                                            direction={sortDirection}
-                                            onSort={handleSort}
-                                        />
+                                        Status
                                     </TableCell>
 
                                     <TableCell

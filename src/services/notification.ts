@@ -1,7 +1,9 @@
 import API_URL from "@/lib/api";
+import { NotificationSummary } from "@/types/notification";
 
 function getToken() {
     if (typeof document === "undefined") return null;
+
     return document.cookie
         .split("; ")
         .find((row) => row.startsWith("token="))
@@ -14,9 +16,15 @@ const headers = () => ({
     "Content-Type": "application/json",
 });
 
-export async function getNotifications() {
-    const res = await fetch(`${API_URL}/notifications`, { headers: headers() });
-    if (!res.ok) throw new Error("Gagal mengambil notifikasi");
+export async function getNotifications(): Promise<NotificationSummary> {
+    const res = await fetch(`${API_URL}/notifications`, {
+        headers: headers(),
+    });
+
+    if (!res.ok) {
+        throw new Error("Gagal mengambil notifikasi");
+    }
+
     return res.json();
 }
 
@@ -25,7 +33,11 @@ export async function markAsRead(id: number) {
         method: "PUT",
         headers: headers(),
     });
-    if (!res.ok) throw new Error("Gagal menandai notifikasi");
+
+    if (!res.ok) {
+        throw new Error("Gagal menandai notifikasi");
+    }
+
     return res.json();
 }
 
@@ -34,6 +46,10 @@ export async function markAllAsRead() {
         method: "PUT",
         headers: headers(),
     });
-    if (!res.ok) throw new Error("Gagal menandai semua notifikasi");
+
+    if (!res.ok) {
+        throw new Error("Gagal menandai semua notifikasi");
+    }
+
     return res.json();
 }

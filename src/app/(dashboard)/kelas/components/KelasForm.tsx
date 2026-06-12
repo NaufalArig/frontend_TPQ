@@ -1,13 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Label from "@/components/form/Label";
 import Input from "@/components/form/InputField";
 import Toast from "@/components/ui/toast/Toast";
 import { useToast } from "@/hooks/useToast";
 import { Kelas, KelasFormData } from "@/types/kelas";
+import { Guru } from "@/types/guru";
 import { createKelas } from "@/services/kelas";
+import { getGuru } from "@/services/guru";
 
 type Props = {
     initialData?: Kelas;
@@ -19,12 +21,40 @@ export default function KelasForm({ initialData, onSubmit, onSuccess }: Props) {
     const router = useRouter();
     const { toast, showToast, hideToast } = useToast();
     const [loading, setLoading] = useState(false);
+    const [teachers, setTeachers] = useState<Guru[]>([]);
 
     const [form, setForm] = useState<KelasFormData>({
+        teacher_id: initialData?.teacher_id ? String(initialData.teacher_id) : "",
         name: initialData?.name || "",
         description: initialData?.description || "",
         status: initialData?.status || "active",
     });
+
+    const loadTeachers = async () => {
+        try {
+            const data = await getGuru();
+            setTeachers(data);
+        } catch (error) {
+            console.error(error);
+            showToast("Gagal mengambil data guru", "error");
+        }
+    };
+
+
+    useEffect(() => {
+        const fetchTeachers = async () => {
+            try {
+                const data = await getGuru();
+                setTeachers(data);
+            } catch (error) {
+                console.error(error);
+                showToast("Gagal mengambil data guru", "error");
+            }
+        };
+
+        fetchTeachers();
+    }, []);
+
 
     const update = (field: keyof KelasFormData, value: string) => {
         setForm((prev) => ({ ...prev, [field]: value }));
@@ -46,15 +76,20 @@ export default function KelasForm({ initialData, onSubmit, onSuccess }: Props) {
         try {
             setLoading(true);
 
+            const payload: KelasFormData = {
+                ...form,
+                teacher_id: form.teacher_id || "",
+            };
+
             if (onSubmit) {
-                await onSubmit(form);
+                await onSubmit(payload);
                 onSuccess?.(
                     initialData
                         ? `Kelas ${form.name} berhasil diperbarui!`
                         : `Kelas ${form.name} berhasil ditambahkan!`
                 );
             } else {
-                await createKelas(form);
+                await createKelas(payload);
                 showToast(`Kelas ${form.name} berhasil ditambahkan!`, "success");
                 setTimeout(() => router.push("/kelas"), 1500);
             }
@@ -76,6 +111,22 @@ export default function KelasForm({ initialData, onSubmit, onSuccess }: Props) {
                     placeholder="Contoh: Iqro 1"
                     onChange={(e) => update("name", e.target.value)}
                 />
+            </div>
+
+            <div>
+                <Label>Guru Pengampu</Label>
+                <select
+                    value={form.teacher_id || ""}
+                    onChange={(e) => update("teacher_id", e.target.value)}
+                    className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm"
+                >
+                    <option value="">Pilih guru pengampu</option>
+                    {teachers.map((teacher) => (
+                        <option key={teacher.id} value={teacher.id}>
+                            {teacher.name}
+                        </option>
+                    ))}
+                </select>
             </div>
 
             <div>
@@ -105,7 +156,7 @@ export default function KelasForm({ initialData, onSubmit, onSuccess }: Props) {
                 <button
                     type="submit"
                     disabled={loading}
-                    className="w-full sm:w-auto bg-brand-500 hover:bg-brand-600 text-white px-6 py-2.5 rounded-lg text-sm font-medium transition-colors disabled:opacity-70"
+                    className="w-full rounded-lg bg-brand-500 px-6 py-2.5 text-sm font-medium text-white transition-colors hover:bg-brand-600 disabled:opacity-70 sm:w-auto"
                 >
                     {loading ? "Menyimpan..." : "Simpan"}
                 </button>
@@ -113,7 +164,7 @@ export default function KelasForm({ initialData, onSubmit, onSuccess }: Props) {
                 <button
                     type="button"
                     onClick={() => router.push("/kelas")}
-                    className="w-full sm:w-auto bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 py-2.5 rounded-lg text-sm font-medium transition-colors"
+                    className="w-full rounded-lg bg-gray-100 px-6 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-200 sm:w-auto"
                 >
                     Batal
                 </button>

@@ -1,15 +1,24 @@
 import API_URL from "@/lib/api";
-
 import api from "@/lib/axios";
 import Cookies from "js-cookie";
+import { User } from "@/types/user";
 
+export type LoginResponse = {
+    status: boolean;
+    message: string;
+    token: string;
+    user: User;
+};
 
-export async function getUser() {
+export async function getUser(): Promise<User> {
     const res = await api.get("/user");
     return res.data;
 }
 
-export async function login(username: string, password: string) {
+export async function login(
+    username: string,
+    password: string
+): Promise<LoginResponse> {
     const res = await fetch(`${API_URL}/login`, {
         method: "POST",
         headers: {
@@ -39,7 +48,6 @@ export async function logout() {
         },
     });
 
-    // Hapus token dan data user dari cookie
     Cookies.remove("token");
     Cookies.remove("user");
 

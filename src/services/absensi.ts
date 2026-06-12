@@ -7,11 +7,13 @@ import {
 } from "@/types/absensi";
 
 export async function getAbsensiSantri(
-    attendance_date: string
+    attendance_date: string,
+    study_class_id?: string | number
 ): Promise<AbsensiSantriResponse> {
     const res = await api.get("/absensi-santri", {
         params: {
             attendance_date,
+            study_class_id,
         },
     });
 

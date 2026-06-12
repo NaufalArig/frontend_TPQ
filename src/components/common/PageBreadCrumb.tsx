@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ArrowLeft, ChevronRight, Home } from "lucide-react";
+import { ChevronRight, Home } from "lucide-react";
 import React from "react";
 
 interface BreadcrumbProps {
@@ -98,11 +98,9 @@ function buildBreadcrumbItems(pathname: string, pageTitle: string): BreadcrumbIt
 const PageBreadcrumb: React.FC<BreadcrumbProps> = ({ pageTitle }) => {
     const pathname = usePathname();
     const items = buildBreadcrumbItems(pathname, pageTitle);
-    const backItem = [...items].reverse().find((item) => item.href);
-    const backHref = backItem?.href;
 
     return (
-        <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mb-6">
             <div>
                 <h2 className="text-xl font-semibold text-gray-800">
                     {pageTitle}
@@ -139,16 +137,6 @@ const PageBreadcrumb: React.FC<BreadcrumbProps> = ({ pageTitle }) => {
                     </ol>
                 </nav>
             </div>
-
-            {backHref && pathname !== "/dashboard" && (
-                <Link
-                    href={backHref}
-                    className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 sm:w-auto"
-                >
-                    <ArrowLeft className="h-4 w-4" />
-                    Kembali
-                </Link>
-            )}
         </div>
     );
 };

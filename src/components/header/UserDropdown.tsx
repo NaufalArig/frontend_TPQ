@@ -180,14 +180,14 @@ export default function UserDropdown({
         >
           <span className="ml-1 h-9 w-9 shrink-0 overflow-hidden rounded-full p-1 sm:h-11 sm:w-11">
             <Image
-            width={44}
-            height={44}
-            src={photoUrl}
-            alt="User"
-            onError={(event) => {
-              event.currentTarget.src = DEFAULT_USER_PHOTO;
-            }}
-          />
+              width={44}
+              height={44}
+              src={photoUrl}
+              alt="User"
+              onError={(event) => {
+                event.currentTarget.src = DEFAULT_USER_PHOTO;
+              }}
+            />
           </span>
           <span className="hidden max-w-32 truncate p-1 text-theme-sm font-medium sm:block lg:max-w-44">
             {user?.name || "User"}
@@ -207,11 +207,16 @@ export default function UserDropdown({
           className="flex w-[calc(100vw-2rem)] max-w-65 flex-col rounded-2xl p-3 shadow-lg dark:bg-gray-900 sm:w-65"
         >
           <div>
-            <span className="block font-medium text-gray-700 text-theme-sm dark:text-white">
-              <span className="block truncate">{user?.name || "User"}</span>
+            <span className="hidden max-w-32 truncate px-2 text-left sm:block lg:max-w-44">
+              <span className="block truncate text-theme-sm font-medium">
+                {user?.name || "User"}
+              </span>
+              <span className="block truncate text-[11px] text-gray-500">
+                {user?.tpq?.name ?? "TPQ"}
+              </span>
+              <span className="mt-0.5 block text-[11px] text-gray-400 capitalize">
+              {user?.role ?? "-"}
             </span>
-            <span className="mt-0.5 block text-theme-xs text-gray-500">
-              <span className="block truncate">{user?.email || "-"}</span>
             </span>
           </div>
 

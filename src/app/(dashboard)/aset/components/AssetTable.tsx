@@ -14,6 +14,9 @@ import { useToast } from "@/hooks/useToast";
 import { deleteAsset, getAssetCategories, getAssets } from "@/services/aset";
 import { Asset, AssetCategory, AssetCondition, AssetStatus } from "@/types/aset";
 import Pagination from "@/components/ui/pagination/Pagination";
+import SortableHeader, {
+    SortDirection,
+} from "@/components/ui/table/SortableHeader";
 
 type Props = {
     search: string;
@@ -66,6 +69,8 @@ export default function AssetTable({
     const [statusFilter, setStatusFilter] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
     const [pageSize, setPageSize] = useState(10);
+    const [sortKey, setSortKey] = useState<string | null>(null);
+    const [sortDirection, setSortDirection] = useState<SortDirection>(null);
     const [deleteModal, setDeleteModal] = useState<{
         show: boolean;
         id: number | null;
@@ -107,6 +112,12 @@ export default function AssetTable({
         }
     }, []);
 
+    const handleSort = (key: string, direction: SortDirection) => {
+        setSortKey(direction ? key : null);
+        setSortDirection(direction);
+        setCurrentPage(1);
+    };
+
     useEffect(() => {
         const timeout = window.setTimeout(() => {
             void loadAssets();
@@ -134,10 +145,53 @@ export default function AssetTable({
             { quantity: 0, value: 0 }
         );
     }, [data]);
-    const totalPages = Math.max(1, Math.ceil(data.length / pageSize));
+    const sortedData = [...data].sort((a, b) => {
+        if (!sortKey || !sortDirection) return 0;
+
+        const getValue = (item: Asset) => {
+            switch (sortKey) {
+                case "asset_code":
+                    return item.asset_code || "";
+                case "name":
+                    return item.name || "";
+                case "category":
+                    return item.category?.name || "";
+                case "quantity":
+                    return Number(item.quantity || 0);
+                case "location":
+                    return item.location || "";
+                case "condition":
+                    return conditionLabel[item.condition] || "";
+                case "status":
+                    return statusLabel[item.status] || "";
+                case "estimated_value":
+                    return Number(item.estimated_value || 0);
+                default:
+                    return "";
+            }
+        };
+
+        const valueA = getValue(a);
+        const valueB = getValue(b);
+
+        if (typeof valueA === "number" && typeof valueB === "number") {
+            return sortDirection === "asc" ? valueA - valueB : valueB - valueA;
+        }
+
+        const compare = String(valueA).localeCompare(String(valueB), "id", {
+            numeric: true,
+            sensitivity: "base",
+        });
+
+        return sortDirection === "asc" ? compare : -compare;
+    });
+
+    const totalPages = Math.max(1, Math.ceil(sortedData.length / pageSize));
     const safeCurrentPage = Math.min(currentPage, totalPages);
     const pageStart = (safeCurrentPage - 1) * pageSize;
-    const paginatedData = data.slice(pageStart, pageStart + pageSize);
+    const paginatedData = sortedData.slice(pageStart, pageStart + pageSize);
+    const hasActiveFilter =
+        categoryFilter !== "" || conditionFilter !== "" || statusFilter !== "";
 
     const handleDeleteConfirm = async () => {
         if (!deleteModal.id) return;
@@ -224,6 +278,76 @@ export default function AssetTable({
                 </div>
             </div>
 
+            <div className="mb-3 mt-4 flex flex-wrap items-center gap-3">
+                <select
+                    value={categoryFilter}
+                    onChange={(e) => {
+                        setCategoryFilter(e.target.value);
+                        setCurrentPage(1);
+                    }}
+                    className="h-10 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10"
+                    aria-label="Filter kategori aset"
+                >
+                    <option value="">Semua Kategori</option>
+                    {categories.map((category) => (
+                        <option key={category.id} value={category.id}>
+                            {category.name}
+                        </option>
+                    ))}
+                </select>
+
+                <select
+                    value={conditionFilter}
+                    onChange={(e) => {
+                        setConditionFilter(e.target.value);
+                        setCurrentPage(1);
+                    }}
+                    className="h-10 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10"
+                    aria-label="Filter kondisi aset"
+                >
+                    <option value="">Semua Kondisi</option>
+                    <option value="good">Baik</option>
+                    <option value="minor_damage">Rusak Ringan</option>
+                    <option value="damaged">Rusak Berat</option>
+                    <option value="lost">Hilang</option>
+                </select>
+
+                <select
+                    value={statusFilter}
+                    onChange={(e) => {
+                        setStatusFilter(e.target.value);
+                        setCurrentPage(1);
+                    }}
+                    className="h-10 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10"
+                    aria-label="Filter status aset"
+                >
+                    <option value="">Semua Status</option>
+                    <option value="available">Tersedia</option>
+                    <option value="in_use">Dipakai</option>
+                    <option value="maintenance">Perbaikan</option>
+                    <option value="disposed">Dihapuskan</option>
+                </select>
+
+                {hasActiveFilter && (
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setCategoryFilter("");
+                            setConditionFilter("");
+                            setStatusFilter("");
+                            setCurrentPage(1);
+                        }}
+                        className="h-10 rounded-lg border border-gray-200 px-3 text-sm font-medium text-gray-600 hover:bg-gray-50"
+                    >
+                        Reset Filter
+                    </button>
+                )}
+
+                <span className="ml-auto text-xs text-gray-400">
+                    {sortedData.length} data ditemukan
+                </span>
+            </div>
+
             <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/5 dark:bg-white/3">
                 <div className="max-w-full overflow-x-auto">
                     <div className="min-w-[1150px]">
@@ -231,66 +355,42 @@ export default function AssetTable({
                             <TableHeader className="border-b border-brand-300 bg-brand-100">
                                 <TableRow>
                                     <TableCell isHeader className="px-4 py-3 text-start text-theme-xs font-semibold text-black">No</TableCell>
-                                    <TableCell isHeader className="px-4 py-3 text-start text-theme-xs font-semibold text-black">Kode</TableCell>
-                                    <TableCell isHeader className="px-4 py-3 text-start text-theme-xs font-semibold text-black">Nama Aset</TableCell>
                                     <TableCell isHeader className="px-4 py-3 text-start text-theme-xs font-semibold text-black">
-                                        <div className="space-y-2">
-                                            <span>Kategori</span>
-                                            <select
-                                                value={categoryFilter}
-                                                onChange={(e) => setCategoryFilter(e.target.value)}
-                                                className="h-8 w-full rounded-md border border-brand-300 bg-white px-2 text-xs font-normal text-gray-700 focus:outline-none"
-                                            >
-                                                <option value="">Semua</option>
-                                                {categories.map((category) => (
-                                                    <option key={category.id} value={category.id}>
-                                                        {category.name}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                        </div>
-                                    </TableCell>
-                                    <TableCell isHeader className="px-4 py-3 text-start text-theme-xs font-semibold text-black">Jumlah</TableCell>
-                                    <TableCell isHeader className="px-4 py-3 text-start text-theme-xs font-semibold text-black">Lokasi</TableCell>
-                                    <TableCell isHeader className="px-4 py-3 text-start text-theme-xs font-semibold text-black">
-                                        <div className="space-y-2">
-                                            <span>Kondisi</span>
-                                            <select
-                                                value={conditionFilter}
-                                                onChange={(e) => setConditionFilter(e.target.value)}
-                                                className="h-8 w-full rounded-md border border-brand-300 bg-white px-2 text-xs font-normal text-gray-700 focus:outline-none"
-                                            >
-                                                <option value="">Semua</option>
-                                                <option value="good">Baik</option>
-                                                <option value="minor_damage">Rusak Ringan</option>
-                                                <option value="damaged">Rusak Berat</option>
-                                                <option value="lost">Hilang</option>
-                                            </select>
-                                        </div>
+                                        Kode
                                     </TableCell>
                                     <TableCell isHeader className="px-4 py-3 text-start text-theme-xs font-semibold text-black">
-                                        <div className="space-y-2">
-                                            <span>Status</span>
-                                            <select
-                                                value={statusFilter}
-                                                onChange={(e) => setStatusFilter(e.target.value)}
-                                                className="h-8 w-full rounded-md border border-brand-300 bg-white px-2 text-xs font-normal text-gray-700 focus:outline-none"
-                                            >
-                                                <option value="">Semua</option>
-                                                <option value="available">Tersedia</option>
-                                                <option value="in_use">Dipakai</option>
-                                                <option value="maintenance">Perbaikan</option>
-                                                <option value="disposed">Dihapuskan</option>
-                                            </select>
-                                        </div>
+                                        <SortableHeader
+                                            label="Nama Aset"
+                                            sortKey="name"
+                                            activeKey={sortKey}
+                                            direction={sortDirection}
+                                            onSort={handleSort}
+                                        />
                                     </TableCell>
-                                    <TableCell isHeader className="px-4 py-3 text-start text-theme-xs font-semibold text-black">Nilai</TableCell>
+                                    <TableCell isHeader className="px-4 py-3 text-start text-theme-xs font-semibold text-black">
+                                        Kategori
+                                    </TableCell>
+                                    <TableCell isHeader className="px-4 py-3 text-start text-theme-xs font-semibold text-black">
+                                        Jumlah
+                                    </TableCell>
+                                    <TableCell isHeader className="px-4 py-3 text-start text-theme-xs font-semibold text-black">
+                                        Lokasi
+                                    </TableCell>
+                                    <TableCell isHeader className="px-4 py-3 text-start text-theme-xs font-semibold text-black">
+                                        Kondisi
+                                    </TableCell>
+                                    <TableCell isHeader className="px-4 py-3 text-start text-theme-xs font-semibold text-black">
+                                        Status
+                                    </TableCell>
+                                    <TableCell isHeader className="px-4 py-3 text-start text-theme-xs font-semibold text-black">
+                                        Nilai
+                                    </TableCell>
                                     <TableCell isHeader className="px-4 py-3 text-start text-theme-xs font-semibold text-black">Aksi</TableCell>
                                 </TableRow>
                             </TableHeader>
 
                             <TableBody className="divide-y divide-gray-100 dark:divide-white/5">
-                                {data.length === 0 ? (
+                                {sortedData.length === 0 ? (
                                     <TableRow>
                                         <TableCell
                                             colSpan={10}
@@ -388,7 +488,7 @@ export default function AssetTable({
                     </div>
                 </div>
                 <Pagination
-                    totalItems={data.length}
+                    totalItems={sortedData.length}
                     currentPage={safeCurrentPage}
                     pageSize={pageSize}
                     onPageChange={setCurrentPage}

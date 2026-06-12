@@ -13,6 +13,9 @@ import { useToast } from "@/hooks/useToast";
 import { getActivityLogById, getActivityLogs } from "@/services/activity-log";
 import { ActivityLog } from "@/types/activity-log";
 import Pagination from "@/components/ui/pagination/Pagination";
+import SortableHeader, {
+    SortDirection,
+} from "@/components/ui/table/SortableHeader";
 
 type Props = {
     search: string;
@@ -131,6 +134,8 @@ export default function ActivityLogTable({ search }: Props) {
     const [module, setModule] = useState("");
     const [dateFrom, setDateFrom] = useState("");
     const [dateTo, setDateTo] = useState("");
+    const [sortKey, setSortKey] = useState<string | null>(null);
+    const [sortDirection, setSortDirection] = useState<SortDirection>(null);
     const [selectedLog, setSelectedLog] = useState<ActivityLog | null>(null);
     const [detailLoading, setDetailLoading] = useState(false);
     const { toast, showToast, hideToast } = useToast();
@@ -164,6 +169,12 @@ export default function ActivityLogTable({ search }: Props) {
         return () => window.clearTimeout(timeout);
     }, [loadLogs]);
 
+    const handleSort = (key: string, direction: SortDirection) => {
+        setSortKey(direction ? key : null);
+        setSortDirection(direction);
+        setCurrentPage(1);
+    };
+
     const handleOpenDetail = async (log: ActivityLog) => {
         try {
             setDetailLoading(true);
@@ -179,10 +190,42 @@ export default function ActivityLogTable({ search }: Props) {
         }
     };
 
-    const totalPages = Math.max(1, Math.ceil(data.length / pageSize));
+    const sortedData = [...data].sort((a, b) => {
+        if (!sortKey || !sortDirection) return 0;
+
+        const getValue = (item: ActivityLog) => {
+            switch (sortKey) {
+                case "created_at":
+                    return item.created_at || "";
+                case "user":
+                    return item.user?.name || "System";
+                case "action":
+                    return actionLabel[item.action] || item.action || "";
+                case "module":
+                    return item.module || "";
+                case "description":
+                    return item.description || "";
+                case "ip_address":
+                    return item.ip_address || "";
+                default:
+                    return "";
+            }
+        };
+
+        const compare = String(getValue(a)).localeCompare(String(getValue(b)), "id", {
+            numeric: true,
+            sensitivity: "base",
+        });
+
+        return sortDirection === "asc" ? compare : -compare;
+    });
+
+    const totalPages = Math.max(1, Math.ceil(sortedData.length / pageSize));
     const safeCurrentPage = Math.min(currentPage, totalPages);
     const pageStart = (safeCurrentPage - 1) * pageSize;
-    const paginatedData = data.slice(pageStart, pageStart + pageSize);
+    const paginatedData = sortedData.slice(pageStart, pageStart + pageSize);
+    const hasActiveFilter =
+        action !== "" || module !== "" || dateFrom !== "" || dateTo !== "";
 
     if (loading) return <p>Loading activity log...</p>;
 
@@ -275,6 +318,82 @@ export default function ActivityLogTable({ search }: Props) {
                 </div>
             )}
 
+            <div className="mb-3 flex flex-wrap items-center gap-3">
+                <input
+                    type="date"
+                    value={dateFrom}
+                    onChange={(e) => {
+                        setDateFrom(e.target.value);
+                        setCurrentPage(1);
+                    }}
+                    className="h-10 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10"
+                    aria-label="Tanggal awal"
+                />
+
+                <input
+                    type="date"
+                    value={dateTo}
+                    onChange={(e) => {
+                        setDateTo(e.target.value);
+                        setCurrentPage(1);
+                    }}
+                    className="h-10 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10"
+                    aria-label="Tanggal akhir"
+                />
+
+                <select
+                    value={action}
+                    onChange={(e) => {
+                        setAction(e.target.value);
+                        setCurrentPage(1);
+                    }}
+                    className="h-10 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10"
+                    aria-label="Filter aksi"
+                >
+                    {actionOptions.map((option) => (
+                        <option key={option.value} value={option.value}>
+                            {option.label}
+                        </option>
+                    ))}
+                </select>
+
+                <select
+                    value={module}
+                    onChange={(e) => {
+                        setModule(e.target.value);
+                        setCurrentPage(1);
+                    }}
+                    className="h-10 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10"
+                    aria-label="Filter modul"
+                >
+                    {moduleOptions.map((option) => (
+                        <option key={option.value} value={option.value}>
+                            {option.label}
+                        </option>
+                    ))}
+                </select>
+
+                {hasActiveFilter && (
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setDateFrom("");
+                            setDateTo("");
+                            setAction("");
+                            setModule("");
+                            setCurrentPage(1);
+                        }}
+                        className="h-10 rounded-lg border border-gray-200 px-3 text-sm font-medium text-gray-600 hover:bg-gray-50"
+                    >
+                        Reset Filter
+                    </button>
+                )}
+
+                <span className="ml-auto text-xs text-gray-400">
+                    {sortedData.length} data ditemukan
+                </span>
+            </div>
+
             <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/5 dark:bg-white/3">
                 <div className="max-w-full overflow-x-auto">
                     <div className="min-w-[1120px]">
@@ -286,61 +405,25 @@ export default function ActivityLogTable({ search }: Props) {
                                     </TableCell>
 
                                     <TableCell isHeader className="px-4 py-3 text-start text-theme-xs font-semibold text-black">
-                                        <div className="space-y-2">
-                                            <span>Waktu</span>
-                                            <div className="flex gap-2">
-                                                <input
-                                                    type="date"
-                                                    value={dateFrom}
-                                                    onChange={(e) => setDateFrom(e.target.value)}
-                                                    className="w-32 rounded-lg border border-brand-300 bg-white px-2 py-1.5 text-xs font-normal text-gray-700 focus:border-brand-300 focus:outline-hidden focus:ring-2 focus:ring-brand-500/10"
-                                                />
-                                                <input
-                                                    type="date"
-                                                    value={dateTo}
-                                                    onChange={(e) => setDateTo(e.target.value)}
-                                                    className="w-32 rounded-lg border border-brand-300 bg-white px-2 py-1.5 text-xs font-normal text-gray-700 focus:border-brand-300 focus:outline-hidden focus:ring-2 focus:ring-brand-500/10"
-                                                />
-                                            </div>
-                                        </div>
+                                        Waktu
                                     </TableCell>
 
                                     <TableCell isHeader className="px-4 py-3 text-start text-theme-xs font-semibold text-black">
-                                        User
+                                        <SortableHeader
+                                            label="User"
+                                            sortKey="user"
+                                            activeKey={sortKey}
+                                            direction={sortDirection}
+                                            onSort={handleSort}
+                                        />
                                     </TableCell>
 
                                     <TableCell isHeader className="px-4 py-3 text-start text-theme-xs font-semibold text-black">
-                                        <div className="space-y-2">
-                                            <span>Aksi</span>
-                                            <select
-                                                value={action}
-                                                onChange={(e) => setAction(e.target.value)}
-                                                className="w-36 rounded-lg border border-brand-300 bg-white px-2 py-1.5 text-xs font-normal text-gray-700 focus:border-brand-300 focus:outline-hidden focus:ring-2 focus:ring-brand-500/10"
-                                            >
-                                                {actionOptions.map((option) => (
-                                                    <option key={option.value} value={option.value}>
-                                                        {option.label}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                        </div>
+                                        Aksi
                                     </TableCell>
 
                                     <TableCell isHeader className="px-4 py-3 text-start text-theme-xs font-semibold text-black">
-                                        <div className="space-y-2">
-                                            <span>Modul</span>
-                                            <select
-                                                value={module}
-                                                onChange={(e) => setModule(e.target.value)}
-                                                className="w-44 rounded-lg border border-brand-300 bg-white px-2 py-1.5 text-xs font-normal text-gray-700 focus:border-brand-300 focus:outline-hidden focus:ring-2 focus:ring-brand-500/10"
-                                            >
-                                                {moduleOptions.map((option) => (
-                                                    <option key={option.value} value={option.value}>
-                                                        {option.label}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                        </div>
+                                        Modul
                                     </TableCell>
 
                                     <TableCell isHeader className="px-4 py-3 text-start text-theme-xs font-semibold text-black">
@@ -356,7 +439,7 @@ export default function ActivityLogTable({ search }: Props) {
                             </TableHeader>
 
                             <TableBody className="divide-y divide-gray-100 dark:divide-white/5">
-                                {data.length === 0 ? (
+                                {sortedData.length === 0 ? (
                                     <TableRow>
                                         <TableCell
                                             colSpan={8}
@@ -426,7 +509,7 @@ export default function ActivityLogTable({ search }: Props) {
                     </div>
                 </div>
                 <Pagination
-                    totalItems={data.length}
+                    totalItems={sortedData.length}
                     currentPage={safeCurrentPage}
                     pageSize={pageSize}
                     onPageChange={setCurrentPage}
