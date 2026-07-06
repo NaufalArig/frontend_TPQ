@@ -24,8 +24,12 @@ import DatePicker from "@/components/form/date-picker";
 
 type Props = {
     search: string;
-    filterDate: string;
-    onFilterDateChange: (value: string) => void;
+    dateFrom: string;
+    dateTo: string;
+    filterMonth: string;
+    onDateFromChange: (value: string) => void;
+    onDateToChange: (value: string) => void;
+    onFilterMonthChange: (value: string) => void;
 };
 
 const bulanLabel: Record<number, string> = {
@@ -71,8 +75,12 @@ function formatDate(value?: string | null) {
 
 export default function KeuanganSppTable({
     search,
-    filterDate,
-    onFilterDateChange,
+    dateFrom,
+    dateTo,
+    filterMonth,
+    onDateFromChange,
+    onDateToChange,
+    onFilterMonthChange,
 }: Props) {
     const [data, setData] = useState<KeuanganSpp[]>([]);
     const [loading, setLoading] = useState(true);
@@ -109,7 +117,9 @@ export default function KeuanganSppTable({
     const filteredData = data.filter((item) => {
         const keyword = search.toLowerCase();
         const paymentDate = getDateOnly(item.payment_date);
-        const matchDate = !filterDate || paymentDate === filterDate;
+        const matchDateFrom = !dateFrom || paymentDate >= dateFrom;
+        const matchDateTo = !dateTo || paymentDate <= dateTo;
+        const matchMonth = !filterMonth || paymentDate.startsWith(filterMonth);
         const matchSearch =
             (item.student?.name || "").toLowerCase().includes(keyword) ||
             (item.student?.nisn || "").toLowerCase().includes(keyword) ||
@@ -120,7 +130,7 @@ export default function KeuanganSppTable({
             formatDate(item.payment_date).toLowerCase().includes(keyword) ||
             paymentDate.includes(keyword);
 
-        return matchSearch && matchDate;
+        return matchSearch && matchDateFrom && matchDateTo && matchMonth;
     });
 
     const totalNominal = filteredData.reduce(
@@ -171,7 +181,7 @@ export default function KeuanganSppTable({
     const safeCurrentPage = Math.min(currentPage, totalPages);
     const pageStart = (safeCurrentPage - 1) * pageSize;
     const paginatedData = sortedData.slice(pageStart, pageStart + pageSize);
-    const hasActiveFilter = filterDate !== "";
+    const hasActiveFilter = dateFrom !== "" || dateTo !== "" || filterMonth !== "";
 
     const handleDeleteConfirm = async () => {
         if (!deleteModal.id) return;
@@ -262,17 +272,49 @@ export default function KeuanganSppTable({
                 </p>
             </div>
 
-            <div className="mb-3 flex flex-wrap items-center gap-3">
-                <div className="w-full sm:w-52">
+            <div className="mb-3 flex flex-wrap items-end gap-3">
+                <div className="w-full sm:w-48">
                     <DatePicker
-                        key={filterDate || "empty-spp-filter-date"}
-                        id="keuangan-spp-filter-date"
-                        placeholder="Pilih tanggal"
-                        defaultDate={filterDate || undefined}
+                        key={dateFrom || "empty-spp-date-from"}
+                        id="keuangan-spp-date-from"
+                        label="Dari Tanggal"
+                        placeholder="Tanggal awal"
+                        defaultDate={dateFrom || undefined}
+                        maxDate={dateTo || undefined}
                         onChange={(_, currentDateString) => {
-                            onFilterDateChange(currentDateString || "");
+                            onDateFromChange(currentDateString || "");
                             setCurrentPage(1);
                         }}
+                    />
+                </div>
+
+                <div className="w-full sm:w-48">
+                    <DatePicker
+                        key={dateTo || "empty-spp-date-to"}
+                        id="keuangan-spp-date-to"
+                        label="Sampai Tanggal"
+                        placeholder="Tanggal akhir"
+                        defaultDate={dateTo || undefined}
+                        minDate={dateFrom || undefined}
+                        onChange={(_, currentDateString) => {
+                            onDateToChange(currentDateString || "");
+                            setCurrentPage(1);
+                        }}
+                    />
+                </div>
+
+                <div className="w-full sm:w-48">
+                    <label className="mb-1.5 block text-sm font-medium text-gray-700">
+                        Pilih Bulan
+                    </label>
+                    <input
+                        type="month"
+                        value={filterMonth}
+                        onChange={(event) => {
+                            onFilterMonthChange(event.target.value);
+                            setCurrentPage(1);
+                        }}
+                        className="h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 text-sm text-gray-800 shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/20"
                     />
                 </div>
 
@@ -280,7 +322,9 @@ export default function KeuanganSppTable({
                     <button
                         type="button"
                         onClick={() => {
-                            onFilterDateChange("");
+                            onDateFromChange("");
+                            onDateToChange("");
+                            onFilterMonthChange("");
                             setCurrentPage(1);
                         }}
                         className="h-10 rounded-lg border border-gray-200 px-3 text-sm font-medium text-gray-600 hover:bg-gray-50"

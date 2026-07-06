@@ -5,8 +5,11 @@ export function proxy(req: NextRequest) {
     const token = req.cookies.get("token")?.value;
     const { pathname } = req.nextUrl;
 
-    // boleh akses login
     if (pathname.startsWith("/login")) {
+        if (token) {
+            return NextResponse.redirect(new URL("/dashboard", req.url));
+        }
+
         return NextResponse.next();
     }
 
@@ -21,6 +24,7 @@ export function proxy(req: NextRequest) {
 export const config = {
     matcher: [
         "/dashboard/:path*",
+        "/login",
         "/santri/:path*",
         "/guru/:path*",
         "/kategori-keuangan/:path*",

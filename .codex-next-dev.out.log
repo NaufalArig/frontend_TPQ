@@ -1,0 +1,10 @@
+
+> tpq-frontend@0.1.0 dev
+> next dev --webpack --port 3007
+
+▲ Next.js 16.2.4 (webpack)
+- Local:         http://localhost:3007
+- Network:       http://192.168.100.12:3007
+- Environments: .env.local
+✓ Ready in 385ms
+[?25h

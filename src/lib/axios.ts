@@ -1,8 +1,9 @@
 import axios from "axios";
 import Cookies from "js-cookie";
+import API_URL from "@/lib/api";
 
 const axiosInstance = axios.create({
-    baseURL: "http://127.0.0.1:8000/api",
+    baseURL: API_URL,
     headers: {
         Accept: "application/json",
     },

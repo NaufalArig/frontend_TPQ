@@ -175,7 +175,7 @@ export default function ActivityLogTable({ search }: Props) {
         setCurrentPage(1);
     };
 
-    const handleOpenDetail = async (log: ActivityLog) => {
+    const  handleOpenDetail = async (log: ActivityLog) => {
         try {
             setDetailLoading(true);
             setSelectedLog(log);
@@ -232,7 +232,7 @@ export default function ActivityLogTable({ search }: Props) {
     return (
         <>
             {selectedLog && (
-                <div className="fixed inset-0 z-[99999] flex items-center justify-center">
+                <div className="fixed inset-0 z-[99999] h-full flex items-center justify-center">
                     <div
                         className="absolute inset-0 bg-black/50"
                         onClick={() => setSelectedLog(null)}

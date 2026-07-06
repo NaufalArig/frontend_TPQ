@@ -12,7 +12,7 @@ export default function ActivityLogsPage() {
     return (
         <RoleGuard allow={["admin"]}>
             <div>
-                <PageBreadcrumb pageTitle="Activity Log" />
+                <PageBreadcrumb pageTitle="Aktivitas Log" />
 
                 <ComponentCard
                     title="Riwayat Aktivitas Sistem"

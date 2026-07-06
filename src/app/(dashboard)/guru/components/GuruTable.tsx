@@ -189,7 +189,7 @@ export default function GuruTable({ search }: Props) {
         <>
             {/* Delete Modal */}
             {deleteModal.show && (
-                <div className="fixed inset-0 z-[99999] flex items-center justify-center">
+                <div className="fixed inset-0 z-99999 flex items-center justify-center">
                     <div
                         className="absolute inset-0 bg-black/50"
                         onClick={() => setDeleteModal({ show: false, id: null, nama: "" })}
@@ -230,7 +230,7 @@ export default function GuruTable({ search }: Props) {
             )}
 
             {selectedGuru && (
-                <div className="fixed inset-0 z-[99999] flex items-center justify-center">
+                <div className="fixed inset-0 z-[99999] h-full flex items-center justify-center">
                     <div
                         className="absolute inset-0 bg-black/50"
                         onClick={() => setSelectedGuru(null)}

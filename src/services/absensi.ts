@@ -29,6 +29,7 @@ export async function getRiwayatAbsensi(params?: {
     attendance_date?: string;
     date_from?: string;
     date_to?: string;
+    study_class_id?: string | number;
     student_id?: string | number;
     status?: AttendanceStatus | "";
 }): Promise<RiwayatAbsensiItem[]> {

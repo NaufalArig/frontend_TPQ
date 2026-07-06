@@ -775,3 +775,91 @@ span.flatpickr-weekday,
     from { width: 0%; }
     to   { width: 100%; }
 }
+
+::-webkit-scrollbar {
+  height: 8px;
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #94a3b8;
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
+}
+
+::-webkit-scrollbar:horizontal {
+  height: 6px;
+}
+
+/* Hilangkan spinner input number - Chrome, Edge, Safari */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Hilangkan spinner input number - Firefox */
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+/* Ukuran kalender flatpickr */
+.flatpickr-calendar {
+  width: 280px !important;
+  font-size: 13px !important;
+  border-radius: 14px !important;
+}
+
+/* Header bulan */
+.flatpickr-months {
+  padding-top: 6px !important;
+}
+
+.flatpickr-current-month {
+  font-size: 16px !important;
+  padding-top: 4px !important;
+}
+
+/* Area hari */
+.flatpickr-days {
+  width: 280px !important;
+}
+
+.dayContainer {
+  width: 280px !important;
+  min-width: 280px !important;
+  max-width: 280px !important;
+}
+
+/* Nama hari */
+.flatpickr-weekdays {
+  width: 280px !important;
+}
+
+.flatpickr-weekday {
+  font-size: 13px !important;
+}
+
+/* Tanggal */
+.flatpickr-day {
+  width: 34px !important;
+  height: 34px !important;
+  line-height: 34px !important;
+  max-width: 34px !important;
+  font-size: 13px !important;
+  margin: 1px !important;
+}
+
+/* Panah kiri kanan */
+.flatpickr-prev-month,
+.flatpickr-next-month {
+  top: 8px !important;
+  padding: 8px !important;
+}

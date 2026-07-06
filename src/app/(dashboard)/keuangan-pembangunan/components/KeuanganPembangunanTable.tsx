@@ -24,9 +24,13 @@ import DatePicker from "@/components/form/date-picker";
 
 type Props = {
     search: string;
-    filterDate: string;
+    dateFrom: string;
+    dateTo: string;
+    filterMonth: string;
     transactionType: "" | "income" | "expense";
-    onFilterDateChange: (value: string) => void;
+    onDateFromChange: (value: string) => void;
+    onDateToChange: (value: string) => void;
+    onFilterMonthChange: (value: string) => void;
     onTransactionTypeChange: (value: "" | "income" | "expense") => void;
 };
 
@@ -63,9 +67,13 @@ function getCategoryName(item: KeuanganPembangunan) {
 
 export default function KeuanganPembangunanTable({
     search,
-    filterDate,
+    dateFrom,
+    dateTo,
+    filterMonth,
     transactionType,
-    onFilterDateChange,
+    onDateFromChange,
+    onDateToChange,
+    onFilterMonthChange,
     onTransactionTypeChange,
 }: Props) {
     const [data, setData] = useState<KeuanganPembangunan[]>([]);
@@ -103,7 +111,9 @@ export default function KeuanganPembangunanTable({
     const filteredData = data.filter((item) => {
         const keyword = search.toLowerCase();
         const paymentDate = getDateOnly(item.payment_date);
-        const matchDate = !filterDate || paymentDate === filterDate;
+        const matchDateFrom = !dateFrom || paymentDate >= dateFrom;
+        const matchDateTo = !dateTo || paymentDate <= dateTo;
+        const matchMonth = !filterMonth || paymentDate.startsWith(filterMonth);
         const matchTransactionType =
             transactionType === "" || item.transaction_type === transactionType;
         const matchSearch =
@@ -118,7 +128,7 @@ export default function KeuanganPembangunanTable({
             formatDate(item.payment_date).toLowerCase().includes(keyword) ||
             paymentDate.includes(keyword);
 
-        return matchSearch && matchDate && matchTransactionType;
+        return matchSearch && matchDateFrom && matchDateTo && matchMonth && matchTransactionType;
     });
 
     const totalPemasukan = filteredData.reduce((total, item) => {
@@ -180,7 +190,8 @@ export default function KeuanganPembangunanTable({
     const safeCurrentPage = Math.min(currentPage, totalPages);
     const pageStart = (safeCurrentPage - 1) * pageSize;
     const paginatedData = sortedData.slice(pageStart, pageStart + pageSize);
-    const hasActiveFilter = filterDate !== "" || transactionType !== "";
+    const hasActiveFilter =
+        dateFrom !== "" || dateTo !== "" || filterMonth !== "" || transactionType !== "";
 
     const handleDeleteConfirm = async () => {
         if (!deleteModal.id) return;
@@ -290,17 +301,49 @@ export default function KeuanganPembangunanTable({
                 </div>
             </div>
 
-            <div className="mb-3 flex flex-wrap items-center gap-3">
-                <div className="w-full sm:w-52">
+            <div className="mb-3 flex flex-wrap items-end gap-3">
+                <div className="w-full sm:w-48">
                     <DatePicker
-                        key={filterDate || "empty-pembangunan-filter-date"}
-                        id="keuangan-pembangunan-filter-date"
-                        placeholder="Pilih tanggal"
-                        defaultDate={filterDate || undefined}
+                        key={dateFrom || "empty-pembangunan-date-from"}
+                        id="keuangan-pembangunan-date-from"
+                        label="Dari Tanggal"
+                        placeholder="Tanggal awal"
+                        defaultDate={dateFrom || undefined}
+                        maxDate={dateTo || undefined}
                         onChange={(_, currentDateString) => {
-                            onFilterDateChange(currentDateString || "");
+                            onDateFromChange(currentDateString || "");
                             setCurrentPage(1);
                         }}
+                    />
+                </div>
+
+                <div className="w-full sm:w-48">
+                    <DatePicker
+                        key={dateTo || "empty-pembangunan-date-to"}
+                        id="keuangan-pembangunan-date-to"
+                        label="Sampai Tanggal"
+                        placeholder="Tanggal akhir"
+                        defaultDate={dateTo || undefined}
+                        minDate={dateFrom || undefined}
+                        onChange={(_, currentDateString) => {
+                            onDateToChange(currentDateString || "");
+                            setCurrentPage(1);
+                        }}
+                    />
+                </div>
+
+                <div className="w-full sm:w-48">
+                    <label className="mb-1.5 block text-sm font-medium text-gray-700">
+                        Pilih Bulan
+                    </label>
+                    <input
+                        type="month"
+                        value={filterMonth}
+                        onChange={(event) => {
+                            onFilterMonthChange(event.target.value);
+                            setCurrentPage(1);
+                        }}
+                        className="h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 text-sm text-gray-800 shadow-theme-xs focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/20"
                     />
                 </div>
 
@@ -322,7 +365,9 @@ export default function KeuanganPembangunanTable({
                     <button
                         type="button"
                         onClick={() => {
-                            onFilterDateChange("");
+                            onDateFromChange("");
+                            onDateToChange("");
+                            onFilterMonthChange("");
                             onTransactionTypeChange("");
                             setCurrentPage(1);
                         }}

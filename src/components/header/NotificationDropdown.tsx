@@ -1,10 +1,10 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useRef, useState, useCallback } from "react";
 import { Dropdown } from "../ui/dropdown/Dropdown";
 import { DropdownItem } from "../ui/dropdown/DropdownItem";
-import { getNotifications, markAsRead, markAllAsRead } from "@/services/notification";
+import { getNotifications } from "@/services/notification";
+import { useRouter } from "next/navigation";
 import { NotifItem } from "@/types/notification";
 
 type NotificationResponse = {
@@ -28,6 +28,20 @@ export default function NotificationDropdown({
   const [unread, setUnread] = useState(0);
   const prevUnread = useRef(0);
   const isOpen = controlledIsOpen ?? localIsOpen;
+  const router = useRouter();
+
+  const showWindowsNotification = useCallback((count: number) => {
+    if (!("Notification" in window) || Notification.permission !== "granted") {
+      return;
+    }
+
+    new Notification("TPQ - Notifikasi Baru", {
+      body: `Ada ${count} notifikasi belum dibaca`,
+      icon: "/favicon.ico",
+      tag: `tpq-notif-${count}-${Date.now()}`,
+      silent: false,
+    });
+  }, []);
 
   const loadNotifications = useCallback(async () => {
     try {
@@ -43,15 +57,7 @@ export default function NotificationDropdown({
           : nextNotifications.filter((notif) => !notif.is_read).length;
 
       if (newUnread > prevUnread.current && prevUnread.current !== -1) {
-        if ("Notification" in window) {
-          const permission = await Notification.requestPermission();
-          if (permission === "granted") {
-            new Notification("TPQ - Notifikasi Baru", {
-              body: `Ada ${newUnread} notifikasi belum dibaca`,
-              icon: "/favicon.ico",
-            });
-          }
-        }
+        showWindowsNotification(newUnread);
       }
 
       prevUnread.current = newUnread;
@@ -62,7 +68,7 @@ export default function NotificationDropdown({
       setNotifications([]);
       setUnread(0);
     }
-  }, []);
+  }, [showWindowsNotification]);
 
   useEffect(() => {
     prevUnread.current = -1;
@@ -75,13 +81,24 @@ export default function NotificationDropdown({
       loadNotifications();
     }, 30000);
 
+    const handleRefreshNotifications = () => {
+      loadNotifications();
+    };
+
+    window.addEventListener("tpq:refresh-notifications", handleRefreshNotifications);
+
     return () => {
       window.clearTimeout(timeout);
       clearInterval(interval);
+      window.removeEventListener("tpq:refresh-notifications", handleRefreshNotifications);
     };
   }, [loadNotifications]);
 
-  const handleOpen = () => {
+  const handleOpen = async () => {
+    if ("Notification" in window && Notification.permission === "default") {
+      await Notification.requestPermission();
+    }
+
     if (onToggle) {
       onToggle();
       return;
@@ -99,17 +116,14 @@ export default function NotificationDropdown({
     setLocalIsOpen(false);
   };
 
-  const handleMarkAsRead = async (id: number) => {
-    await markAsRead(id);
-    loadNotifications();
-  };
-
-  const handleMarkAllAsRead = async () => {
-    await markAllAsRead();
-    loadNotifications();
-  };
-
   const safeNotifications = Array.isArray(notifications) ? notifications : [];
+
+  const previewNotifications = safeNotifications.slice(0, 5);
+
+  const goToNotificationPage = () => {
+    handleClose();
+    router.push("/notifikasi");
+  };
 
   return (
     <div className="relative">
@@ -146,14 +160,6 @@ export default function NotificationDropdown({
             )}
           </h5>
           <div className="flex shrink-0 items-center gap-2 sm:gap-3">
-            {unread > 0 && (
-              <button
-                onClick={handleMarkAllAsRead}
-                className="text-xs text-blue-500 hover:underline"
-              >
-                Baca semua
-              </button>
-            )}
             <button onClick={handleClose} className="text-gray-500 hover:text-gray-700 dark:text-gray-400">
               <svg className="fill-current" width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                 <path fillRule="evenodd" clipRule="evenodd" d="M6.21967 7.28131C5.92678 6.98841 5.92678 6.51354 6.21967 6.22065C6.51256 5.92775 6.98744 5.92775 7.28033 6.22065L11.999 10.9393L16.7176 6.22078C17.0105 5.92789 17.4854 5.92788 17.7782 6.22078C18.0711 6.51367 18.0711 6.98855 17.7782 7.28144L13.0597 12L17.7782 16.7186C18.0711 17.0115 18.0711 17.4863 17.7782 17.7792C17.4854 18.0721 17.0105 18.0721 16.7176 17.7792L11.999 13.0607L7.28033 17.7794C6.98744 18.0722 6.51256 18.0722 6.21967 17.7794C5.92678 17.4865 5.92678 17.0116 6.21967 16.7187L10.9384 12L6.21967 7.28131Z" fill="currentColor" />
@@ -169,10 +175,10 @@ export default function NotificationDropdown({
             </li>
           )}
 
-          {safeNotifications.map((notif) => (
+          {previewNotifications.map((notif) => (
             <li key={notif.id}>
               <DropdownItem
-                onItemClick={() => !notif.is_read && handleMarkAsRead(notif.id)}
+                onItemClick={goToNotificationPage}
                 className={`flex gap-3 rounded-lg border-b border-gray-100 px-4 py-3 hover:bg-gray-100 dark:border-gray-800 dark:hover:bg-white/5 ${!notif.is_read ? "bg-orange-50" : ""
                   }`}
               >
@@ -206,12 +212,13 @@ export default function NotificationDropdown({
           ))}
         </ul>
 
-        <Link
-          href="/notifikasi"
-          className="block px-4 py-2 mt-3 text-sm font-medium text-center text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700"
+        <button
+          type="button"
+          onClick={goToNotificationPage}
+          className="block w-full px-4 py-2 mt-3 text-sm font-medium text-center text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700"
         >
           Lihat Semua Notifikasi
-        </Link>
+        </button>
       </Dropdown>
     </div>
   );

@@ -48,8 +48,8 @@ export async function logout() {
         },
     });
 
-    Cookies.remove("token");
-    Cookies.remove("user");
+    Cookies.remove("token", { path: "/" });
+    Cookies.remove("user", { path: "/" });
 
     if (!res.ok) {
         throw new Error("Gagal logout");

@@ -21,6 +21,7 @@ import SortableHeader, {
 } from "@/components/ui/table/SortableHeader";
 import { getKelas } from "@/services/kelas";
 import { Kelas } from "@/types/kelas";
+import { useUser } from "@/context/UserContext";
 
 const getTodayLocal = () => {
     const date = new Date();
@@ -50,8 +51,17 @@ export default function AbsensiPage() {
 
     const router = useRouter();
     const { toast, showToast, hideToast } = useToast();
+    const { user, loading: userLoading } = useUser();
 
     useEffect(() => {
+        if (!userLoading && user?.role === "admin") {
+            router.replace("/absensi/riwayat");
+        }
+    }, [router, user?.role, userLoading]);
+
+    useEffect(() => {
+        if (user?.role === "admin") return;
+
         getKelas()
             .then((res) => {
                 setKelasList((res ?? []).filter((kelas: Kelas) => kelas.status === "active"));
@@ -60,21 +70,11 @@ export default function AbsensiPage() {
                 console.error(error);
                 showToast("Gagal mengambil data kelas", "error");
             });
-    }, [showToast]);
-
-    const markAllPresent = () => {
-        setData((prev) =>
-            prev.map((item) => ({
-                ...item,
-                status: "present",
-                note: "",
-            }))
-        );
-
-        showToast("Semua santri ditandai hadir", "success");
-    };
+    }, [showToast, user?.role]);
 
     const loadAbsensi = useCallback(async () => {
+        if (user?.role === "admin") return;
+
         try {
             setLoading(true);
 
@@ -108,7 +108,7 @@ export default function AbsensiPage() {
         } finally {
             setLoading(false);
         }
-    }, [attendanceDate, selectedClassId, showToast]);
+    }, [attendanceDate, selectedClassId, showToast, user?.role]);
 
     useEffect(() => {
         const timeout = window.setTimeout(() => {
@@ -172,6 +172,10 @@ export default function AbsensiPage() {
 
         return sortDirection === "asc" ? compare : -compare;
     });
+
+    if (!userLoading && user?.role === "admin") {
+        return null;
+    }
 
     const handleSave = async () => {
         try {
@@ -238,6 +242,7 @@ export default function AbsensiPage() {
                                 id="attendance-date"
                                 placeholder="Pilih tanggal"
                                 defaultDate={attendanceDate}
+                                maxDate={getTodayLocal()}
                                 useTodayDefault
                                 onChange={(_, currentDateString) => {
                                     setAttendanceDate(currentDateString || getTodayLocal());
@@ -258,13 +263,14 @@ export default function AbsensiPage() {
                 ) : (
                     <>
                         <div className="overflow-x-auto rounded-xl border border-gray-200">
-                            <Table>
+                            <div className="min-w-[920px]">
+                            <Table className="table-fixed">
                                 <TableHeader className="border-b border-brand-300 bg-brand-100">
                                     <TableRow>
-                                        <TableCell isHeader className="px-4 py-3 font-semibold text-black text-start text-theme-xs dark:text-gray-400">
+                                        <TableCell isHeader className="w-[70px] px-4 py-3 font-semibold text-black text-start text-theme-xs dark:text-gray-400">
                                             No
                                         </TableCell>
-                                        <TableCell isHeader className="px-4 py-3 font-semibold text-black text-start text-theme-xs dark:text-gray-400">
+                                        <TableCell isHeader className="w-[260px] px-4 py-3 font-semibold text-black text-start text-theme-xs dark:text-gray-400">
                                             <SortableHeader
                                                 label="Nama Santri"
                                                 sortKey="name"
@@ -273,13 +279,13 @@ export default function AbsensiPage() {
                                                 onSort={handleSort}
                                             />
                                         </TableCell>
-                                        <TableCell isHeader className="px-4 py-3 font-semibold text-black text-start text-theme-xs dark:text-gray-400">
+                                        <TableCell isHeader className="w-180px px-4 py-3 font-semibold text-black text-start text-theme-xs dark:text-gray-400">
                                             Kelas
                                         </TableCell>
-                                        <TableCell isHeader className="px-4 py-3 font-semibold text-black text-start text-theme-xs dark:text-gray-400">
+                                        <TableCell isHeader className="w-160px px-4 py-3 font-semibold text-black text-start text-theme-xs dark:text-gray-400">
                                             Status
                                         </TableCell>
-                                        <TableCell isHeader className="px-4 py-3 font-semibold text-black text-start text-theme-xs dark:text-gray-400">
+                                        <TableCell isHeader className="w-[250px] px-4 py-3 font-semibold text-black text-start text-theme-xs dark:text-gray-400">
                                             Keterangan
                                         </TableCell>
                                     </TableRow>
@@ -296,7 +302,7 @@ export default function AbsensiPage() {
                                                 {item.name}
                                             </TableCell>
 
-                                            <TableCell className="px-4 py-3 text-gray-500 text-theme-sm dark:text-gray-400">
+                                            <TableCell className="whitespace-nowrap px-4 py-3 text-gray-500 text-theme-sm dark:text-gray-400">
                                                 {item.study_class?.name || "-"}
                                             </TableCell>
 
@@ -335,6 +341,7 @@ export default function AbsensiPage() {
                                     ))}
                                 </TableBody>
                             </Table>
+                            </div>
                         </div>
 
                         <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:justify-end">
@@ -344,16 +351,6 @@ export default function AbsensiPage() {
                             >
                                 Riwayat Absensi
                             </button>
-
-                            {(!hasAbsensi || isEditing) && (
-                                <button
-                                    onClick={markAllPresent}
-                                    type="button"
-                                    className="w-full rounded-lg bg-green-500 px-6 py-2.5 text-sm font-medium text-white hover:bg-green-600 sm:w-auto"
-                                >
-                                    Tandai Semua Hadir
-                                </button>
-                            )}
 
                             {hasAbsensi && !isEditing ? (
                                 <button

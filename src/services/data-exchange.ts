@@ -10,6 +10,21 @@ export type DataExchangeModule =
     | "keuangan-spp"
     | "keuangan-pembangunan";
 
+export type ImportErrorDetail = {
+    row: number;
+    field?: string | null;
+    label?: string | null;
+    message: string;
+    detail?: string;
+};
+
+export type ImportResult = {
+    message: string;
+    created: number;
+    updated: number;
+    errors: ImportErrorDetail[];
+};
+
 export async function exportData(module: DataExchangeModule, fileName: string) {
     const res = await api.get(`/data-exchange/${module}/export`, {
         responseType: "blob",
@@ -41,10 +56,5 @@ export async function importData(module: DataExchangeModule, file: File) {
         },
     });
 
-    return res.data as {
-        message: string;
-        created: number;
-        updated: number;
-        errors: Array<{ row: number; message: string }>;
-    };
+    return res.data as ImportResult;
 }

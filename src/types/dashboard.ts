@@ -1,10 +1,13 @@
 export type PendingStudent = {
     id: number;
+    tpq_id: number;
     study_class_id?: number | null;
     name: string;
     birth_date: string;
     join_date?: string | null;
     status?: "pending" | "active" | "graduated" | "left";
+    activation_status: 'due' | 'soon' | 'waiting';
+    days_left: number;
     study_class?: {
         id: number;
         name: string;

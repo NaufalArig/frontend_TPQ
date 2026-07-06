@@ -11,13 +11,14 @@ type Props = {
 };
 
 export default function RoleGuard({ allow, children }: Props) {
-  const { user, loading } = useUser();
+  const { user, loading, authUnavailable } = useUser();
   const router = useRouter();
 
   const isAllowed = user ? allow.includes(user.role) : false;
 
   useEffect(() => {
     if (loading) return;
+    if (authUnavailable) return;
 
     if (!user) {
       router.replace("/login");
@@ -27,9 +28,9 @@ export default function RoleGuard({ allow, children }: Props) {
     if (!isAllowed) {
       router.replace("/unauthorized");
     }
-  }, [user, loading, isAllowed, router]);
+  }, [user, loading, authUnavailable, isAllowed, router]);
 
-  if (loading) {
+  if (loading || authUnavailable) {
     return null;
   }
 

@@ -9,6 +9,11 @@ const nextConfig = {
         port: "8000",
         pathname: "/storage/**",
       },
+      {
+        protocol: "https",
+        hostname: "api.sistemtpq.web.id",
+        pathname: "/storage/**",
+      },
     ],
   },
   webpack(config) {

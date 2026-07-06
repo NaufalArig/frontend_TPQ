@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { createGuru } from "@/services/guru";
 import Label from "@/components/form/Label";
 import Input from "@/components/form/InputField";
@@ -30,6 +30,113 @@ function getPhotoUrl(photo?: string | null) {
     return `${STORAGE_URL}/${photo}`;
 }
 
+type RegionOption = {
+    code: string;
+    name: string;
+};
+
+const REGION_API_URL = "https://www.emsifa.com/api-wilayah-indonesia/api";
+
+const FALLBACK_PROVINCES: RegionOption[] = [
+    { code: "11", name: "Aceh" },
+    { code: "12", name: "Sumatera Utara" },
+    { code: "13", name: "Sumatera Barat" },
+    { code: "14", name: "Riau" },
+    { code: "15", name: "Jambi" },
+    { code: "16", name: "Sumatera Selatan" },
+    { code: "17", name: "Bengkulu" },
+    { code: "18", name: "Lampung" },
+    { code: "19", name: "Kepulauan Bangka Belitung" },
+    { code: "21", name: "Kepulauan Riau" },
+    { code: "31", name: "DKI Jakarta" },
+    { code: "32", name: "Jawa Barat" },
+    { code: "33", name: "Jawa Tengah" },
+    { code: "34", name: "DI Yogyakarta" },
+    { code: "35", name: "Jawa Timur" },
+    { code: "36", name: "Banten" },
+    { code: "51", name: "Bali" },
+    { code: "52", name: "Nusa Tenggara Barat" },
+    { code: "53", name: "Nusa Tenggara Timur" },
+    { code: "61", name: "Kalimantan Barat" },
+    { code: "62", name: "Kalimantan Tengah" },
+    { code: "63", name: "Kalimantan Selatan" },
+    { code: "64", name: "Kalimantan Timur" },
+    { code: "65", name: "Kalimantan Utara" },
+    { code: "71", name: "Sulawesi Utara" },
+    { code: "72", name: "Sulawesi Tengah" },
+    { code: "73", name: "Sulawesi Selatan" },
+    { code: "74", name: "Sulawesi Tenggara" },
+    { code: "75", name: "Gorontalo" },
+    { code: "76", name: "Sulawesi Barat" },
+    { code: "81", name: "Maluku" },
+    { code: "82", name: "Maluku Utara" },
+    { code: "91", name: "Papua Barat" },
+    { code: "92", name: "Papua Barat Daya" },
+    { code: "93", name: "Papua Selatan" },
+    { code: "94", name: "Papua" },
+    { code: "95", name: "Papua Pegunungan" },
+    { code: "96", name: "Papua Tengah" },
+];
+
+const sameRegionName = (a?: string | null, b?: string | null) => {
+    return (a || "").trim().toLowerCase() === (b || "").trim().toLowerCase();
+};
+
+const formatRegionName = (name: string) => {
+    const words = name.trim().replace(/\s+/g, " ").split(" ");
+    const mergedWords: string[] = [];
+
+    for (let i = 0; i < words.length; i++) {
+        if (words[i].length === 1) {
+            const letters = [words[i]];
+            let nextIndex = i + 1;
+
+            while (nextIndex < words.length && words[nextIndex].length === 1) {
+                letters.push(words[nextIndex]);
+                nextIndex++;
+            }
+
+            mergedWords.push(letters.join(""));
+            i = nextIndex - 1;
+        } else {
+            mergedWords.push(words[i]);
+        }
+    }
+
+    return mergedWords
+        .join(" ")
+        .toLowerCase()
+        .replace(/\b\w/g, (char) => char.toUpperCase())
+        .replace(/\bDki\b/g, "DKI")
+        .replace(/\bDi\b/g, "DI");
+};
+
+const fetchRegions = async (path: string): Promise<RegionOption[]> => {
+    try {
+        const response = await fetch(`${REGION_API_URL}/${path}`);
+
+        if (!response.ok) {
+            throw new Error("Gagal mengambil data wilayah");
+        }
+
+        const result = await response.json();
+        const items = Array.isArray(result) ? result : result.data;
+
+        if (!Array.isArray(items)) {
+            return path === "provinces.json" ? FALLBACK_PROVINCES : [];
+        }
+
+        return items.map((item) => ({
+            code: String(item.code ?? item.id ?? ""),
+            name: formatRegionName(String(item.name ?? item.nama ?? "")),
+        })).filter((item) => item.code && item.name);
+    } catch (error) {
+        console.error("Gagal mengambil data wilayah:", error);
+
+        return path === "provinces.json" ? FALLBACK_PROVINCES : [];
+    }
+};
+
 export default function GuruForm({ initialData, onSubmit, onSuccess }: Props) {
     const router = useRouter();
     const { toast, showToast, hideToast } = useToast();
@@ -43,6 +150,14 @@ export default function GuruForm({ initialData, onSubmit, onSuccess }: Props) {
     const [scale, setScale] = useState(1);
     const [dragging, setDragging] = useState(false);
     const [dragStart, setDragStart] = useState({ x: 0, y: 0, px: 0, py: 0 });
+
+    const [provinces, setProvinces] = useState<RegionOption[]>([]);
+    const [regencies, setRegencies] = useState<RegionOption[]>([]);
+    const [districts, setDistricts] = useState<RegionOption[]>([]);
+    const [villages, setVillages] = useState<RegionOption[]>([]);
+    const [selectedProvinceCode, setSelectedProvinceCode] = useState("");
+    const [selectedRegencyCode, setSelectedRegencyCode] = useState("");
+    const [selectedDistrictCode, setSelectedDistrictCode] = useState("");
 
     // Circle overlay drag state
     const [circlePos, setCirclePos] = useState({ x: 75, y: 100 }); // center of 150x200
@@ -123,6 +238,159 @@ export default function GuruForm({ initialData, onSubmit, onSuccess }: Props) {
         } finally {
             setLoading(false);
         }
+    };
+
+    useEffect(() => {
+        let ignore = false;
+
+        fetchRegions("provinces.json")
+            .then((items) => {
+                if (ignore) return;
+
+                setProvinces(items);
+
+                const provinceCode = items.find((item) =>
+                    sameRegionName(item.name, initialData?.province)
+                )?.code;
+
+                if (provinceCode) {
+                    setSelectedProvinceCode(provinceCode);
+                }
+            })
+            .catch((error) => {
+                console.error("Gagal mengambil provinsi:", error);
+            });
+
+        return () => {
+            ignore = true;
+        };
+    }, [initialData?.province]);
+
+    useEffect(() => {
+        if (!selectedProvinceCode) return;
+
+        let ignore = false;
+
+        fetchRegions(`regencies/${selectedProvinceCode}.json`)
+            .then((items) => {
+                if (ignore) return;
+
+                setRegencies(items);
+
+                const regencyCode = items.find((item) =>
+                    sameRegionName(item.name, initialData?.city)
+                )?.code;
+
+                if (regencyCode) {
+                    setSelectedRegencyCode(regencyCode);
+                }
+            })
+            .catch((error) => {
+                console.error("Gagal mengambil kabupaten/kota:", error);
+            });
+
+        return () => {
+            ignore = true;
+        };
+    }, [initialData?.city, selectedProvinceCode]);
+
+    useEffect(() => {
+        if (!selectedRegencyCode) return;
+
+        let ignore = false;
+
+        fetchRegions(`districts/${selectedRegencyCode}.json`)
+            .then((items) => {
+                if (ignore) return;
+
+                setDistricts(items);
+
+                const districtCode = items.find((item) =>
+                    sameRegionName(item.name, initialData?.district)
+                )?.code;
+
+                if (districtCode) {
+                    setSelectedDistrictCode(districtCode);
+                }
+            })
+            .catch((error) => {
+                console.error("Gagal mengambil kecamatan:", error);
+            });
+
+        return () => {
+            ignore = true;
+        };
+    }, [initialData?.district, selectedRegencyCode]);
+
+    useEffect(() => {
+        if (!selectedDistrictCode) return;
+
+        let ignore = false;
+
+        fetchRegions(`villages/${selectedDistrictCode}.json`)
+            .then((items) => {
+                if (ignore) return;
+
+                setVillages(items);
+            })
+            .catch((error) => {
+                console.error("Gagal mengambil desa/kelurahan:", error);
+            });
+
+        return () => {
+            ignore = true;
+        };
+    }, [selectedDistrictCode]);
+
+    const handleProvinceChange = (code: string) => {
+        const province = provinces.find((item) => item.code === code);
+
+        setSelectedProvinceCode(code);
+        setSelectedRegencyCode("");
+        setSelectedDistrictCode("");
+        setRegencies([]);
+        setDistricts([]);
+        setVillages([]);
+        setForm((prev) => ({
+            ...prev,
+            province: province?.name || "",
+            city: "",
+            district: "",
+            village: "",
+        }));
+    };
+
+    const handleRegencyChange = (code: string) => {
+        const regency = regencies.find((item) => item.code === code);
+
+        setSelectedRegencyCode(code);
+        setSelectedDistrictCode("");
+        setDistricts([]);
+        setVillages([]);
+        setForm((prev) => ({
+            ...prev,
+            city: regency?.name || "",
+            district: "",
+            village: "",
+        }));
+    };
+
+    const handleDistrictChange = (code: string) => {
+        const district = districts.find((item) => item.code === code);
+
+        setSelectedDistrictCode(code);
+        setVillages([]);
+        setForm((prev) => ({
+            ...prev,
+            district: district?.name || "",
+            village: "",
+        }));
+    };
+
+    const handleVillageChange = (code: string) => {
+        const village = villages.find((item) => item.code === code);
+
+        update("village", village?.name || "");
     };
 
     // ── Drag foto handlers ──────────────────────────────────────
@@ -344,7 +612,7 @@ export default function GuruForm({ initialData, onSubmit, onSuccess }: Props) {
                             <div>
                                 <Label>Kontak</Label>
                                 <Input
-                                    type="text"
+                                    type="number"
                                     value={form.phone}
                                     placeholder="08123456789"
                                     onChange={(e) => update("phone", e.target.value)}
@@ -443,16 +711,6 @@ export default function GuruForm({ initialData, onSubmit, onSuccess }: Props) {
                                 defaultDate={form.birth_date || undefined}
                                 onChange={(_, val) => update("birth_date", val)}
                             />
-
-                            <div>
-                                <Label>Kontak</Label>
-                                <Input
-                                    type="text"
-                                    value={form.phone || ""}
-                                    placeholder="08123456789"
-                                    onChange={(e) => update("phone", e.target.value)}
-                                />
-                            </div>
                         </div>
 
                         <div>
@@ -466,39 +724,76 @@ export default function GuruForm({ initialData, onSubmit, onSuccess }: Props) {
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
-                                <Label>Desa</Label>
-                                <Input
-                                    type="text"
-                                    value={form.village || ""}
-                                    onChange={(e) => update("village", e.target.value)}
-                                />
+                                <Label>Provinsi</Label>
+                                <select
+                                    value={selectedProvinceCode}
+                                    onChange={(e) => handleProvinceChange(e.target.value)}
+                                    className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm text-gray-700 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
+                                >
+                                    <option value="">Pilih provinsi</option>
+                                    {provinces.map((province) => (
+                                        <option key={province.code} value={province.code}>
+                                            {province.name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <div>
+                                <Label>Kabupaten / Kota</Label>
+                                <select
+                                    value={selectedRegencyCode}
+                                    disabled={!selectedProvinceCode}
+                                    onChange={(e) => handleRegencyChange(e.target.value)}
+                                    className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm text-gray-700 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 disabled:bg-gray-100 disabled:text-gray-400 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
+                                >
+                                    <option value="">
+                                        {selectedProvinceCode ? "Pilih kabupaten / kota" : "Pilih provinsi dulu"}
+                                    </option>
+                                    {regencies.map((regency) => (
+                                        <option key={regency.code} value={regency.code}>
+                                            {regency.name}
+                                        </option>
+                                    ))}
+                                </select>
                             </div>
 
                             <div>
                                 <Label>Kecamatan</Label>
-                                <Input
-                                    type="text"
-                                    value={form.district || ""}
-                                    onChange={(e) => update("district", e.target.value)}
-                                />
+                                <select
+                                    value={selectedDistrictCode}
+                                    disabled={!selectedRegencyCode}
+                                    onChange={(e) => handleDistrictChange(e.target.value)}
+                                    className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm text-gray-700 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 disabled:bg-gray-100 disabled:text-gray-400 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
+                                >
+                                    <option value="">
+                                        {selectedRegencyCode ? "Pilih kecamatan" : "Pilih kabupaten / kota dulu"}
+                                    </option>
+                                    {districts.map((district) => (
+                                        <option key={district.code} value={district.code}>
+                                            {district.name}
+                                        </option>
+                                    ))}
+                                </select>
                             </div>
 
                             <div>
-                                <Label>Kabupaten</Label>
-                                <Input
-                                    type="text"
-                                    value={form.city || ""}
-                                    onChange={(e) => update("city", e.target.value)}
-                                />
-                            </div>
-
-                            <div>
-                                <Label>Provinsi</Label>
-                                <Input
-                                    type="text"
-                                    value={form.province || ""}
-                                    onChange={(e) => update("province", e.target.value)}
-                                />
+                                <Label>Desa / Kelurahan</Label>
+                                <select
+                                    value={villages.find((item) => sameRegionName(item.name, form.village))?.code || ""}
+                                    disabled={!selectedDistrictCode}
+                                    onChange={(e) => handleVillageChange(e.target.value)}
+                                    className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm text-gray-700 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 disabled:bg-gray-100 disabled:text-gray-400 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
+                                >
+                                    <option value="">
+                                        {selectedDistrictCode ? "Pilih desa / kelurahan" : "Pilih kecamatan dulu"}
+                                    </option>
+                                    {villages.map((village) => (
+                                        <option key={village.code} value={village.code}>
+                                            {village.name}
+                                        </option>
+                                    ))}
+                                </select>
                             </div>
                         </div>
 
@@ -522,7 +817,7 @@ export default function GuruForm({ initialData, onSubmit, onSuccess }: Props) {
                             </div>
 
                             <div>
-                                <Label>Ijazah</Label>
+                                <Label>Ijazah Terakhir</Label>
                                 <Input
                                     type="text"
                                     value={form.education || ""}

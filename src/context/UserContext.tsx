@@ -17,12 +17,14 @@ import { User } from "@/types/user";
 type UserContextType = {
     user: User | null;
     loading: boolean;
+    authUnavailable: boolean;
     setUser: Dispatch<SetStateAction<User | null>>;
 };
 
 const UserContext = createContext<UserContextType>({
     user: null,
     loading: true,
+    authUnavailable: false,
     setUser: () => {},
 });
 
@@ -33,6 +35,7 @@ export const UserProvider = ({
 }) => {
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
+    const [authUnavailable, setAuthUnavailable] = useState(false);
 
     useEffect(() => {
         let isMounted = true;
@@ -44,6 +47,7 @@ export const UserProvider = ({
                 if (!token) {
                     if (isMounted) {
                         setUser(null);
+                        setAuthUnavailable(false);
                         setLoading(false);
                     }
 
@@ -54,14 +58,29 @@ export const UserProvider = ({
 
                 if (isMounted) {
                     setUser(data);
+                    setAuthUnavailable(false);
                 }
             } catch (err) {
                 console.log("USER ERROR:", err);
 
-                Cookies.remove("token");
+                const status =
+                    err instanceof Error && "status" in err
+                        ? Number((err as Error & { status?: number }).status)
+                        : null;
+
+                if (status === 401 || status === 403) {
+                    Cookies.remove("token", { path: "/" });
+
+                    if (isMounted) {
+                        setUser(null);
+                        setAuthUnavailable(false);
+                    }
+
+                    return;
+                }
 
                 if (isMounted) {
-                    setUser(null);
+                    setAuthUnavailable(true);
                 }
             } finally {
                 if (isMounted) {
@@ -78,7 +97,7 @@ export const UserProvider = ({
     }, []);
 
     return (
-        <UserContext.Provider value={{ user, loading, setUser }}>
+        <UserContext.Provider value={{ user, loading, authUnavailable, setUser }}>
             {children}
         </UserContext.Provider>
     );

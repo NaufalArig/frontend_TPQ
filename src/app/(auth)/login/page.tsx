@@ -7,11 +7,13 @@ import Input from "@/components/form/InputField";
 import Label from "@/components/form/Label";
 import Button from "@/components/ui/button/Button";
 import { EyeCloseIcon, EyeIcon } from "@/icons";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Toast from "@/components/ui/toast/Toast";
 import { useToast } from "@/hooks/useToast";
+import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
+    const router = useRouter();
     const [showPassword, setShowPassword] = useState(false);
     const [isChecked, setIsChecked] = useState(false);
     const [username, setUsername] = useState("");
@@ -20,6 +22,12 @@ export default function LoginPage() {
     const [showSuccess, setShowSuccess] = useState(false);
     const { toast, showToast, hideToast } = useToast();
     const [loginName, setLoginName] = useState("");
+
+    useEffect(() => {
+        if (Cookies.get("token")) {
+            router.replace("/dashboard");
+        }
+    }, [router]);
 
     const handleLogin = async (e: React.SyntheticEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -40,10 +48,12 @@ export default function LoginPage() {
             const res = await login(username, password);
             
             localStorage.clear();
-            Cookies.remove("token");
+            Cookies.remove("token", { path: "/" });
             Cookies.set("token", res.token, {
                 expires: isChecked ? 7 : 1,
+                path: "/",
                 sameSite: "lax",
+                secure: window.location.protocol === "https:",
             });
             
             setLoginName(res.user?.tpq?.name ?? username);
@@ -119,7 +129,7 @@ export default function LoginPage() {
                                 Masuk
                             </h1>
                             <p className="text-sm text-gray-500 dark:text-gray-400">
-                                Masukkan username dan kata sandi kamu!
+                                Masukkan nama pengguna dan kata sandi kamu!
                             </p>
                         </div>
 
@@ -146,16 +156,18 @@ export default function LoginPage() {
                                             value={password}
                                             onChange={(e) => setPassword(e.target.value)}
                                         />
-                                        <span
-                                            onClick={() => setShowPassword(!showPassword)}
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowPassword((prev) => !prev)}
                                             className="absolute z-30 -translate-y-1/2 cursor-pointer right-4 top-1/2"
+                                            aria-label={showPassword ? "Sembunyikan kata sandi" : "Lihat kata sandi"}
                                         >
                                             {showPassword ? (
                                                 <EyeIcon className="fill-gray-500 dark:fill-gray-400" />
                                             ) : (
                                                 <EyeCloseIcon className="fill-gray-500 dark:fill-gray-400" />
                                             )}
-                                        </span>
+                                        </button>
                                     </div>
                                 </div>
                                 <div className="flex items-center justify-between">

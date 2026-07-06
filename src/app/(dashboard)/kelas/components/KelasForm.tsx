@@ -30,17 +30,6 @@ export default function KelasForm({ initialData, onSubmit, onSuccess }: Props) {
         status: initialData?.status || "active",
     });
 
-    const loadTeachers = async () => {
-        try {
-            const data = await getGuru();
-            setTeachers(data);
-        } catch (error) {
-            console.error(error);
-            showToast("Gagal mengambil data guru", "error");
-        }
-    };
-
-
     useEffect(() => {
         const fetchTeachers = async () => {
             try {

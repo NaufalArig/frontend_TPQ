@@ -19,7 +19,9 @@ type TransactionTypeFilter = "" | "income" | "expense";
 
 export default function KeuanganPembangunanPage() {
     const [search, setSearch] = useState("");
-    const [filterDate, setFilterDate] = useState("");
+    const [dateFrom, setDateFrom] = useState("");
+    const [dateTo, setDateTo] = useState("");
+    const [filterMonth, setFilterMonth] = useState("");
     const [transactionType, setTransactionType] =
         useState<TransactionTypeFilter>("");
     const [previewOpen, setPreviewOpen] = useState(false);
@@ -30,8 +32,9 @@ export default function KeuanganPembangunanPage() {
     const laporanParams: LaporanParams = {
         type: "pembangunan",
         search: search.trim(),
-        date_from: filterDate,
-        date_to: filterDate,
+        date_from: dateFrom,
+        date_to: dateTo,
+        filter_month: filterMonth,
         transaction_type: transactionType,
     };
 
@@ -126,7 +129,9 @@ export default function KeuanganPembangunanPage() {
                                     type="button"
                                     onClick={() => {
                                         setSearch("");
-                                        setFilterDate("");
+                                        setDateFrom("");
+                                        setDateTo("");
+                                        setFilterMonth("");
                                         setTransactionType("");
                                     }}
                                     className="w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 lg:w-auto"
@@ -138,9 +143,13 @@ export default function KeuanganPembangunanPage() {
                     >
                         <KeuanganPembangunanTable
                             search={search}
-                            filterDate={filterDate}
+                            dateFrom={dateFrom}
+                            dateTo={dateTo}
+                            filterMonth={filterMonth}
                             transactionType={transactionType}
-                            onFilterDateChange={setFilterDate}
+                            onDateFromChange={setDateFrom}
+                            onDateToChange={setDateTo}
+                            onFilterMonthChange={setFilterMonth}
                             onTransactionTypeChange={setTransactionType}
                         />
                     </ComponentCard>

@@ -27,6 +27,7 @@ export default function UserTable({ search }: Props) {
     const [loading, setLoading] = useState(true);
     const [currentPage, setCurrentPage] = useState(1);
     const [pageSize, setPageSize] = useState(10);
+    const [roleFilter, setRoleFilter] = useState("");
 
     const [sortKey, setSortKey] = useState<string | null>(null);
     const [sortDirection, setSortDirection] = useState<SortDirection>(null);
@@ -87,27 +88,30 @@ export default function UserTable({ search }: Props) {
             user.role === "admin"
                 ? "admin"
                 : user.role === "teacher"
-                ? "guru"
-                : user.role === "treasurer"
-                ? "bendahara"
-                : user.role;
+                    ? "guru"
+                    : user.role === "treasurer"
+                        ? "bendahara"
+                        : user.role;
 
         const statusText =
             user.status === "active"
                 ? "aktif"
                 : user.status === "inactive"
-                ? "nonaktif"
-                : user.status;
+                    ? "nonaktif"
+                    : user.status;
 
-        return (
+        const matchSearch =
             user.name.toLowerCase().includes(keyword) ||
             user.username.toLowerCase().includes(keyword) ||
             (user.email || "").toLowerCase().includes(keyword) ||
             user.role.toLowerCase().includes(keyword) ||
             user.status.toLowerCase().includes(keyword) ||
             roleText.toLowerCase().includes(keyword) ||
-            statusText.toLowerCase().includes(keyword)
-        );
+            statusText.toLowerCase().includes(keyword);
+
+        const matchRole = roleFilter === "" || user.role === roleFilter;
+
+        return matchSearch && matchRole;
     });
 
     const sortedData = [...filteredData].sort((a, b) => {
@@ -149,6 +153,30 @@ export default function UserTable({ search }: Props) {
     const safeCurrentPage = Math.min(currentPage, totalPages);
     const pageStart = (safeCurrentPage - 1) * pageSize;
     const paginatedData = sortedData.slice(pageStart, pageStart + pageSize);
+
+    const getRoleBadgeClass = (role: string) => {
+        if (role === "admin") {
+            return "bg-red-100 text-red-700";
+        }
+
+        if (role === "teacher") {
+            return "bg-green-100 text-green-700";
+        }
+
+        if (role === "treasurer") {
+            return "bg-yellow-100 text-yellow-700";
+        }
+
+        return "bg-gray-100 text-gray-700";
+    };
+
+    const getRoleLabel = (role: string) => {
+        if (role === "admin") return "Admin";
+        if (role === "teacher") return "Guru";
+        if (role === "treasurer") return "Bendahara";
+
+        return role;
+    };
 
     useEffect(() => {
         async function fetchUsers() {
@@ -245,6 +273,45 @@ export default function UserTable({ search }: Props) {
                 </div>
             )}
 
+
+            <div className="mb-3 flex flex-wrap items-center gap-3">
+                <div className="flex items-center gap-2">
+                    <label className="whitespace-nowrap text-xs font-medium text-black">
+                        Role
+                    </label>
+
+                    <select
+                        value={roleFilter}
+                        onChange={(e) => {
+                            setRoleFilter(e.target.value);
+                            setCurrentPage(1);
+                        }}
+                        className="h-8 rounded-lg border border-gray-200 bg-white px-2 text-xs text-gray-700 focus:outline-none focus:ring-1 focus:ring-brand-300 dark:border-white/10 dark:bg-white/5 dark:text-gray-300"
+                    >
+                        <option value="">Semua</option>
+                        <option value="admin">Admin</option>
+                        <option value="teacher">Guru</option>
+                        <option value="treasurer">Bendahara</option>
+                    </select>
+                </div>
+
+                {roleFilter && (
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setRoleFilter("");
+                            setCurrentPage(1);
+                        }}
+                        className="h-8 rounded-lg border border-gray-200 px-3 text-xs text-gray-500 hover:bg-gray-50 dark:border-white/10 dark:hover:bg-white/5"
+                    >
+                        Reset Filter
+                    </button>
+                )}
+
+                <span className="ml-auto text-xs text-gray-400">
+                    {sortedData.length} data ditemukan
+                </span>
+            </div>
             <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/5 dark:bg-white/3">
                 <div className="max-w-full overflow-x-auto">
                     <div className="min-w-[1050px]">
@@ -338,24 +405,21 @@ export default function UserTable({ search }: Props) {
                                             </TableCell>
 
                                             <TableCell className="px-4 py-3 text-gray-500 text-theme-sm dark:text-gray-400">
-                                                <span className="rounded-full bg-blue-100 px-2 py-1 text-xs text-blue-700">
-                                                    {user.role === "admin"
-                                                        ? "Admin"
-                                                        : user.role === "teacher"
-                                                        ? "Guru"
-                                                        : user.role === "treasurer"
-                                                        ? "Bendahara"
-                                                        : user.role}
+                                                <span
+                                                    className={`rounded-full px-2 py-1 text-xs font-medium ${getRoleBadgeClass(
+                                                        user.role
+                                                    )}`}
+                                                >
+                                                    {getRoleLabel(user.role)}
                                                 </span>
                                             </TableCell>
 
                                             <TableCell className="px-4 py-3 text-gray-500 text-theme-sm dark:text-gray-400">
                                                 <span
-                                                    className={`rounded-full px-2 py-1 text-xs font-medium ${
-                                                        user.status === "active"
-                                                            ? "bg-green-100 text-green-700"
-                                                            : "bg-red-100 text-red-700"
-                                                    }`}
+                                                    className={`rounded-full px-2 py-1 text-xs font-medium ${user.status === "active"
+                                                        ? "bg-green-100 text-green-700"
+                                                        : "bg-red-100 text-red-700"
+                                                        }`}
                                                 >
                                                     {user.status === "active"
                                                         ? "Aktif"

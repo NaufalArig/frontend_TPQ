@@ -1,5 +1,8 @@
 import API_URL from "@/lib/api";
-import { NotificationSummary } from "@/types/notification";
+import {
+    NotificationFilter,
+    NotificationSummary,
+} from "@/types/notification";
 
 function getToken() {
     if (typeof document === "undefined") return null;
@@ -16,8 +19,12 @@ const headers = () => ({
     "Content-Type": "application/json",
 });
 
-export async function getNotifications(): Promise<NotificationSummary> {
-    const res = await fetch(`${API_URL}/notifications`, {
+export async function getNotifications(
+    status: NotificationFilter = "all"
+): Promise<NotificationSummary> {
+    const query = status === "all" ? "" : `?status=${status}`;
+
+    const res = await fetch(`${API_URL}/notifications${query}`, {
         headers: headers(),
     });
 
@@ -25,20 +32,13 @@ export async function getNotifications(): Promise<NotificationSummary> {
         throw new Error("Gagal mengambil notifikasi");
     }
 
-    return res.json();
-}
+    const data = await res.json();
 
-export async function markAsRead(id: number) {
-    const res = await fetch(`${API_URL}/notifications/${id}/read`, {
-        method: "PUT",
-        headers: headers(),
-    });
-
-    if (!res.ok) {
-        throw new Error("Gagal menandai notifikasi");
-    }
-
-    return res.json();
+    return {
+        data: data.data ?? [],
+        unread: data.unread ?? data.unread_count ?? 0,
+        unread_count: data.unread_count ?? data.unread ?? 0,
+    };
 }
 
 export async function markAllAsRead() {
@@ -49,6 +49,32 @@ export async function markAllAsRead() {
 
     if (!res.ok) {
         throw new Error("Gagal menandai semua notifikasi");
+    }
+
+    return res.json();
+}
+
+export async function deleteNotification(id: number) {
+    const res = await fetch(`${API_URL}/notifications/${id}`, {
+        method: "DELETE",
+        headers: headers(),
+    });
+
+    if (!res.ok) {
+        throw new Error("Gagal menghapus notifikasi");
+    }
+
+    return res.json();
+}
+
+export async function deleteAllNotifications() {
+    const res = await fetch(`${API_URL}/notifications/delete-all`, {
+        method: "DELETE",
+        headers: headers(),
+    });
+
+    if (!res.ok) {
+        throw new Error("Gagal menghapus semua notifikasi");
     }
 
     return res.json();

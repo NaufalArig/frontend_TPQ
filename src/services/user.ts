@@ -49,7 +49,9 @@ export async function getUser(): Promise<User> {
   });
 
   if (!res.ok) {
-    throw new Error("Gagal ambil user");
+    const error = new Error("Gagal ambil user") as Error & { status?: number };
+    error.status = res.status;
+    throw error;
   }
 
   return res.json();

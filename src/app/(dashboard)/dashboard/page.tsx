@@ -1,9 +1,9 @@
-"use client";
+﻿"use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getDashboardStats } from "@/services/dashboard";
-import { DashboardStats } from "@/types/dashboard";
+import { DashboardStats, FinanceChart } from "@/types/dashboard";
 import { BoxIconLine, GroupIcon } from "@/icons";
 import {
   BarChart,
@@ -16,6 +16,9 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { useUser } from "@/context/UserContext";
+import API_URL from "@/lib/api";
+import Toast from "@/components/ui/toast/Toast";
+import { useToast } from "@/hooks/useToast";
 
 function formatRupiah(value: number) {
   return new Intl.NumberFormat("id-ID", {
@@ -35,10 +38,102 @@ function formatTanggal(value?: string | null) {
   });
 }
 
+function FinanceChartTooltip({
+  active,
+  payload,
+  label,
+}: {
+  active?: boolean;
+  payload?: Array<{
+    dataKey?: string | number;
+    name?: string;
+    value?: unknown;
+    payload?: FinanceChart;
+  }>;
+  label?: string;
+}) {
+  if (!active || !payload?.length) return null;
+
+  const row = payload[0]?.payload;
+  const tuition = Number(row?.tuition ?? 0);
+  const developmentFund = Number(row?.development_fund ?? 0);
+
+  if (tuition <= 0 && developmentFund <= 0) return null;
+
+  return (
+    <div className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm shadow-sm">
+      <p className="mb-2 font-medium text-gray-800">{label}</p>
+      {payload.map((item) => {
+        const amount = Number(item.value ?? 0);
+
+        if (amount <= 0) return null;
+
+        return (
+          <p
+            key={String(item.dataKey)}
+            className={
+              item.dataKey === "tuition" ? "text-green-600" : "text-blue-600"
+            }
+          >
+            {item.name}: {formatRupiah(amount)}
+          </p>
+        );
+      })}
+    </div>
+  );
+}
+
+function getToken() {
+  if (typeof document === "undefined") return null;
+  return document.cookie
+    .split("; ")
+    .find((row) => row.startsWith("token="))
+    ?.split("=")[1];
+}
+
+
 export default function DashboardPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const router = useRouter();
   const { user } = useUser();
+  const [activateTarget, setActivateTarget] = useState<import("@/types/dashboard").PendingStudent | null>(null);
+  const [activating, setActivating] = useState(false);
+  const [activateError, setActivateError] = useState<string | null>(null);
+  const { toast, showToast, hideToast } = useToast();
+
+  const handleActivate = async () => {
+    if (!activateTarget) return;
+    setActivating(true);
+    setActivateError(null);
+
+    try {
+      const token = getToken();
+
+      const res = await fetch(`${API_URL}/santri/${activateTarget.id}/activate`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: "application/json",
+        },
+      });
+
+      const result = await res.json();
+
+      if (!res.ok) {
+        throw new Error(result.message || "Gagal mengaktifkan santri");
+      }
+
+      setActivateTarget(null);
+      await loadDashboardStats();
+      window.dispatchEvent(new Event("tpq:refresh-notifications"));
+      showToast(`${activateTarget.name} berhasil diaktifkan!`, "success");
+
+    } catch (err: unknown) {
+      setActivateError(err instanceof Error ? err.message : "Terjadi kesalahan");
+    } finally {
+      setActivating(false);
+    }
+  };
 
   const loadDashboardStats = useCallback(async () => {
     const data = await getDashboardStats();
@@ -301,8 +396,8 @@ export default function DashboardPage() {
 
                     <span
                       className={`whitespace-nowrap text-sm font-semibold ${t.transaction_type === "expense"
-                          ? "text-red-600"
-                          : "text-gray-800"
+                        ? "text-red-600"
+                        : "text-gray-800"
                         }`}
                     >
                       {t.transaction_type === "expense" ? "- " : ""}
@@ -335,10 +430,8 @@ export default function DashboardPage() {
                     }
                   />
                   <Tooltip
-                    formatter={(value: unknown) => {
-                      const amount = Number(value ?? 0);
-                      return formatRupiah(amount);
-                    }}
+                    content={<FinanceChartTooltip />}
+                    cursor={false}
                   />
                   <Legend wrapperStyle={{ fontSize: "12px" }} />
                   <Bar dataKey="tuition" name="SPP" fill="#22c55e" radius={[4, 4, 0, 0]} />
@@ -507,13 +600,13 @@ export default function DashboardPage() {
 
       {/* Tables Section */}
       <div className="grid grid-cols-1 gap-4 sm:gap-6 xl:grid-cols-2">
-        {/* Santri Pending */}
+
+        {/* Santri Perlu Diaktifkan */}
         <div className="rounded-2xl border border-gray-200 bg-white p-4 sm:p-5 dark:border-gray-800 dark:bg-white/[0.03]">
           <div className="flex items-center justify-between mb-3 sm:mb-4">
             <h5 className="text-sm sm:text-base font-semibold text-gray-800 dark:text-white">
               Santri Perlu Diaktifkan
             </h5>
-
             <button
               onClick={() => router.push("/santri")}
               className="text-xs text-blue-500 hover:underline whitespace-nowrap ml-2"
@@ -528,30 +621,59 @@ export default function DashboardPage() {
             </p>
           ) : (
             <div className="overflow-x-auto -mx-4 sm:mx-0">
-              <table className="w-full text-sm min-w-[360px]">
+              <table className="w-full text-sm min-w-[400px]">
                 <thead>
                   <tr className="text-left text-gray-400 border-b dark:border-gray-700">
                     <th className="pb-2 font-medium pl-4 sm:pl-0">Nama</th>
-                    <th className="pb-2 font-medium">Kelas</th>
-                    <th className="pb-2 font-medium pr-4 sm:pr-0">
-                      Tgl Masuk
-                    </th>
+                    <th className="pb-2 font-medium">Status</th>
+                    <th className="pb-2 font-medium">Tgl Masuk</th>
+                    <th className="pb-2 font-medium pr-4 sm:pr-0"></th>
                   </tr>
                 </thead>
-
                 <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
                   {(stats.pending_students_list ?? []).map((s) => (
-                    <tr key={s.id}>
-                      <td className="py-2 text-gray-700 dark:text-gray-300 pl-4 sm:pl-0">
+                    <tr
+                      key={s.id}
+                      className={
+                        s.activation_status === "due"
+                          ? "bg-orange-50"
+                          : s.activation_status === "soon"
+                            ? "bg-yellow-50"
+                            : ""
+                      }
+                    >
+                      <td className="py-2 text-gray-700 dark:text-gray-300 pl-4 sm:pl-0 font-medium">
                         {s.name}
                       </td>
-
-                      <td className="py-2 text-gray-500">
-                        {s.study_class?.name || "-"}
+                      <td className="py-2">
+                        {s.activation_status === "due" && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-700">
+                            Segera aktifkan
+                          </span>
+                        )}
+                        {s.activation_status === "soon" && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700">
+                            {s.days_left} hari lagi
+                          </span>
+                        )}
+                        {s.activation_status === "waiting" && (
+                          <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-500">
+                            Menunggu
+                          </span>
+                        )}
                       </td>
-
-                      <td className="py-2 text-gray-500 pr-4 sm:pr-0">
+                      <td className="py-2 text-gray-500 text-xs">
                         {formatTanggal(s.join_date)}
+                      </td>
+                      <td className="py-2 pr-4 sm:pr-0">
+                        {(s.activation_status === "due") && (
+                          <button
+                            onClick={() => setActivateTarget(s)}
+                            className="px-3 py-1 text-xs font-medium bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                          >
+                            Aktifkan
+                          </button>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -560,6 +682,50 @@ export default function DashboardPage() {
             </div>
           )}
         </div>
+
+        {/* Modal Konfirmasi Aktivasi */}
+        {activateTarget && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+            <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm">
+              <h3 className="text-base font-semibold text-gray-800 mb-2">
+                Konfirmasi Aktivasi Santri
+              </h3>
+              <p className="text-sm text-gray-600 mb-1">
+                Apakah kamu yakin ingin mengaktifkan santri:
+              </p>
+              <p className="text-sm font-semibold text-gray-800 mb-4">
+                {activateTarget.name}
+              </p>
+              <p className="text-xs text-gray-400 mb-6">
+                Tgl masuk: {formatTanggal(activateTarget.join_date)}
+              </p>
+
+              {activateError && (
+                <p className="text-xs text-red-500 mb-4">{activateError}</p>
+              )}
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    setActivateTarget(null);
+                    setActivateError(null);
+                  }}
+                  className="flex-1 px-4 py-2 text-sm border border-gray-300 rounded-xl text-gray-600 hover:bg-gray-50 transition-colors"
+                  disabled={activating}
+                >
+                  Batal
+                </button>
+                <button
+                  onClick={handleActivate}
+                  disabled={activating}
+                  className="flex-1 px-4 py-2 text-sm bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors disabled:opacity-50"
+                >
+                  {activating ? "Mengaktifkan..." : "Ya, Aktifkan"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Transaksi Terakhir */}
         <div className="rounded-2xl border border-gray-200 bg-white p-4 sm:p-5 dark:border-gray-800 dark:bg-white/[0.03]">
@@ -681,10 +847,8 @@ export default function DashboardPage() {
               />
 
               <Tooltip
-                formatter={(value: unknown) => {
-                  const amount = Number(value ?? 0);
-                  return formatRupiah(amount);
-                }}
+                content={<FinanceChartTooltip />}
+                cursor={false}
               />
 
               <Legend wrapperStyle={{ fontSize: "12px" }} />
@@ -706,6 +870,9 @@ export default function DashboardPage() {
           </ResponsiveContainer>
         </div>
       </div>
+      {toast.show && (
+        <Toast message={toast.message} type={toast.type} onClose={hideToast} />
+      )}
     </div>
   );
 }

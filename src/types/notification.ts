@@ -31,7 +31,10 @@ export type NotifItem = {
     } | null;
 };
 
+export type NotificationFilter = "all" | "unread" | "read";
+
 export type NotificationSummary = {
     data: NotifItem[];
     unread: number;
+    unread_count?: number;
 };
