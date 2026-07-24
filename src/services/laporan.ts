@@ -2,6 +2,7 @@ import api from "@/lib/axios";
 
 export type LaporanParams = {
     type?: "all" | "spp" | "pembangunan";
+    year?: string;
     date_from?: string;
     date_to?: string;
     filter_month?: string;

@@ -2,6 +2,8 @@ import API_URL from "@/lib/api";
 import { GuruFormData } from "@/types/guru";
 import Cookies from "js-cookie";
 
+const CLEARABLE_FIELDS = ["leave_date"];
+
 function getToken() {
     if (typeof document === "undefined") return null;
 
@@ -13,24 +15,24 @@ function getToken() {
 
 function buildGuruFormData(data: GuruFormData) {
     const formData = new FormData();
-
     Object.entries(data).forEach(([key, value]) => {
-        if (value === null || value === undefined || value === "") {
+        // Photo hanya dikirim kalau File baru
+        if (key === "photo" && !(value instanceof File)) {
             return;
         }
 
-        // Jangan kirim photo lama dalam bentuk string.
-        // Photo hanya dikirim kalau File baru.
-        if (key === "photo" && !(value instanceof File)) {
+        if (value === null || value === undefined || value === "") {
+            // kirim string kosong utk field clearable → backend meng-null-kan
+            if (CLEARABLE_FIELDS.includes(key)) {
+                formData.append(key, "");
+            }
             return;
         }
 
         formData.append(key, value as string | Blob);
     });
-
     return formData;
 }
-
 async function handleResponse(res: Response, fallbackMessage: string) {
     const result = await res.json();
 

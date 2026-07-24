@@ -8,6 +8,7 @@ import Toast from "@/components/ui/toast/Toast";
 import { useToast } from "@/hooks/useToast";
 import { useRouter } from "next/navigation";
 import { createUser } from "@/services/user";
+import { Eye, EyeOff } from "lucide-react";
 
 type Props = {
     initialData?: User;
@@ -28,6 +29,16 @@ export default function UserForm({ initialData, onSubmit, onSuccess }: Props) {
     const router = useRouter();
     const { toast, showToast, hideToast } = useToast();
     const [loading, setLoading] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
+
+    const passwordValue = form.password || "";
+    const passwordChecks = {
+        length: passwordValue.length >= 6,
+        upper: /[A-Z]/.test(passwordValue),
+        number: /[0-9]/.test(passwordValue),
+    };
+    const isPasswordValid =
+        passwordChecks.length && passwordChecks.upper && passwordChecks.number;
 
     const update = (field: keyof UserFormData, value: string) => {
         setForm((prev) => ({ ...prev, [field]: value }));
@@ -48,6 +59,14 @@ export default function UserForm({ initialData, onSubmit, onSuccess }: Props) {
 
         if (!initialData && !form.password?.trim()) {
             showToast("Password wajib diisi", "error");
+            return;
+        }
+        // wajib valid saat buat baru, ATAU saat edit tapi password diisi
+        if ((!initialData || form.password?.trim()) && !isPasswordValid) {
+            showToast(
+                "Password minimal 6 karakter, mengandung huruf kapital & angka",
+                "error"
+            );
             return;
         }
 
@@ -102,14 +121,63 @@ export default function UserForm({ initialData, onSubmit, onSuccess }: Props) {
                 />
             </div>
 
-            <div>
-                <Label>Username</Label>
-                <Input
-                    type="text"
-                    value={form.username}
-                    placeholder="Masukkan username"
-                    onChange={(e) => update("username", e.target.value)}
-                />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <Label>Username</Label>
+                    <Input
+                        type="text"
+                        value={form.username}
+                        placeholder="Masukkan username"
+                        onChange={(e) => update("username", e.target.value)}
+                    />
+                </div>
+
+                <div>
+                    <Label>
+                        Password{" "}
+                        {initialData && (
+                            <span className="text-gray-400">
+                                (kosongkan jika tidak diganti)
+                            </span>
+                        )}
+                    </Label>
+                    <div className="relative">
+                        <input
+                            type={showPassword ? "text" : "password"}
+                            value={form.password || ""}
+                            placeholder="Minimal 6 karakter"
+                            onChange={(e) => update("password", e.target.value)}
+                            className="w-full rounded-lg border border-gray-300 px-4 py-2.5 pr-11 text-sm text-gray-700 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
+                        />
+                        <button
+                            type="button"
+                            onClick={() => setShowPassword((s) => !s)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                            aria-label={showPassword ? "Sembunyikan password" : "Tampilkan password"}
+                        >
+                            {showPassword ? (
+                                <EyeOff className="h-4 w-4" />
+                            ) : (
+                                <Eye className="h-4 w-4" />
+                            )}
+                        </button>
+                    </div>
+
+                    {/* Indikator syarat password (muncul saat password diisi) */}
+                    {form.password && (
+                        <ul className="mt-2 space-y-1 text-xs">
+                            <li className={passwordChecks.length ? "text-green-600" : "text-gray-400"}>
+                                {passwordChecks.length ? "✓" : "○"} Minimal 6 karakter
+                            </li>
+                            <li className={passwordChecks.upper ? "text-green-600" : "text-gray-400"}>
+                                {passwordChecks.upper ? "✓" : "○"} Mengandung huruf kapital (A-Z)
+                            </li>
+                            <li className={passwordChecks.number ? "text-green-600" : "text-gray-400"}>
+                                {passwordChecks.number ? "✓" : "○"} Mengandung angka (0-9)
+                            </li>
+                        </ul>
+                    )}
+                </div>
             </div>
 
             <div>
@@ -124,22 +192,7 @@ export default function UserForm({ initialData, onSubmit, onSuccess }: Props) {
                 />
             </div>
 
-            <div>
-                <Label>
-                    Password{" "}
-                    {initialData && (
-                        <span className="text-gray-400">
-                            (kosongkan jika tidak diganti)
-                        </span>
-                    )}
-                </Label>
-                <Input
-                    type="password"
-                    value={form.password || ""}
-                    placeholder="Minimal 6 karakter"
-                    onChange={(e) => update("password", e.target.value)}
-                />
-            </div>
+
 
             <div>
                 <Label>Role</Label>
@@ -150,7 +203,6 @@ export default function UserForm({ initialData, onSubmit, onSuccess }: Props) {
                 >
                     <option value="">Pilih Role</option>
                     <option value="admin">Admin</option>
-                    <option value="teacher">Guru</option>
                     <option value="treasurer">Bendahara</option>
                 </select>
             </div>

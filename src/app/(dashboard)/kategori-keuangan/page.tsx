@@ -6,7 +6,6 @@ import PageBreadcrumb from "@/components/common/PageBreadCrumb";
 import ComponentCard from "@/components/common/ComponentCard";
 import RoleGuard from "@/components/RoleGuard";
 import KategoriKeuanganCardList from "./components/KategoriKeuanganCardList";
-import DataExchangeButtons from "@/components/data-exchange/DataExchangeButtons";
 
 export default function KategoriKeuanganPage() {
     const [search, setSearch] = useState("");
@@ -24,11 +23,6 @@ export default function KategoriKeuanganPage() {
                         >
                             Tambah Kategori
                         </Link>
-                        <DataExchangeButtons
-                            module="kategori-keuangan"
-                            fileName="data-kategori-keuangan.xlsx"
-                            label="Kategori Keuangan"
-                        />
                     </div>
 
                     <ComponentCard

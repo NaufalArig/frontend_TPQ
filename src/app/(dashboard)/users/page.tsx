@@ -6,7 +6,6 @@ import UserTable from "./components/UserTable";
 import Link from "next/link";
 import RoleGuard from "@/components/RoleGuard";
 import { useState } from "react";
-import DataExchangeButtons from "@/components/data-exchange/DataExchangeButtons";
 
 export default function UsersPage() {
     const [search, setSearch] = useState("");
@@ -22,11 +21,6 @@ export default function UsersPage() {
                             className="w-full rounded-lg bg-brand-600 px-4 py-2 text-center text-sm font-medium text-white hover:bg-brand-500 sm:w-auto"
                         >Tambah User
                         </Link>
-                        <DataExchangeButtons
-                            module="users"
-                            fileName="data-users.xlsx"
-                            label="User"
-                        />
                     </div>
                     <ComponentCard
                         title="Daftar Tabel User"

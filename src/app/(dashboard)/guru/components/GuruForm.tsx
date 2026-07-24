@@ -11,6 +11,7 @@ import { Guru, GuruFormData } from "@/types/guru";
 import Toast from "@/components/ui/toast/Toast";
 import { useToast } from "@/hooks/useToast";
 import API_URL from "@/lib/api";
+import { Eye, EyeOff } from "lucide-react";
 
 type Props = {
     initialData?: Guru;
@@ -141,6 +142,7 @@ export default function GuruForm({ initialData, onSubmit, onSuccess }: Props) {
     const router = useRouter();
     const { toast, showToast, hideToast } = useToast();
     const frameRef = useRef<HTMLDivElement>(null);
+    const [showPassword, setShowPassword] = useState(false);
 
     // Foto state
     const [preview, setPreview] = useState<string | null>(
@@ -194,6 +196,14 @@ export default function GuruForm({ initialData, onSubmit, onSuccess }: Props) {
     });
 
     const [loading, setLoading] = useState(false);
+    const passwordValue = form.password || "";
+    const passwordChecks = {
+        length: passwordValue.length >= 6,
+        upper: /[A-Z]/.test(passwordValue),
+        number: /[0-9]/.test(passwordValue),
+    };
+    const isPasswordValid =
+        passwordChecks.length && passwordChecks.upper && passwordChecks.number;
 
     const update = (field: string, value: string) => {
         setForm((prev) => ({ ...prev, [field]: value }));
@@ -219,6 +229,13 @@ export default function GuruForm({ initialData, onSubmit, onSuccess }: Props) {
 
         if (!initialData && !form.password?.trim()) {
             showToast("Password login wajib diisi", "error");
+            return;
+        }
+        if (!initialData && !isPasswordValid) {
+            showToast(
+                "Password minimal 6 karakter, mengandung huruf kapital & angka",
+                "error"
+            );
             return;
         }
 
@@ -646,12 +663,42 @@ export default function GuruForm({ initialData, onSubmit, onSuccess }: Props) {
 
                                 <div>
                                     <Label>Password Login</Label>
-                                    <Input
-                                        type="password"
-                                        value={form.password || ""}
-                                        placeholder="Minimal 6 karakter"
-                                        onChange={(e) => update("password", e.target.value)}
-                                    />
+                                    <div className="relative">
+                                        <input
+                                            type={showPassword ? "text" : "password"}
+                                            value={form.password || ""}
+                                            placeholder="Minimal 6 karakter"
+                                            onChange={(e) => update("password", e.target.value)}
+                                            className="w-full rounded-lg border border-gray-300 px-4 py-2.5 pr-11 text-sm text-gray-700 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowPassword((s) => !s)}
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                                            aria-label={showPassword ? "Sembunyikan password" : "Tampilkan password"}
+                                        >
+                                            {showPassword ? (
+                                                <EyeOff className="h-4 w-4" />
+                                            ) : (
+                                                <Eye className="h-4 w-4" />
+                                            )}
+                                        </button>
+                                    </div>
+
+                                    {/* Indikator syarat password */}
+                                    {form.password && (
+                                        <ul className="mt-2 space-y-1 text-xs">
+                                            <li className={passwordChecks.length ? "text-green-600" : "text-gray-400"}>
+                                                {passwordChecks.length ? "✓" : "○"} Minimal 6 karakter
+                                            </li>
+                                            <li className={passwordChecks.upper ? "text-green-600" : "text-gray-400"}>
+                                                {passwordChecks.upper ? "✓" : "○"} Mengandung huruf kapital (A-Z)
+                                            </li>
+                                            <li className={passwordChecks.number ? "text-green-600" : "text-gray-400"}>
+                                                {passwordChecks.number ? "✓" : "○"} Mengandung angka (0-9)
+                                            </li>
+                                        </ul>
+                                    )}
                                 </div>
                             </div>
                         )}

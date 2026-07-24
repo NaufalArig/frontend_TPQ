@@ -6,7 +6,6 @@ import PageBreadcrumb from "@/components/common/PageBreadCrumb";
 import ComponentCard from "@/components/common/ComponentCard";
 import RoleGuard from "@/components/RoleGuard";
 import KelasCardList from "./components/KelasCardList";
-import DataExchangeButtons from "@/components/data-exchange/DataExchangeButtons";
 import { useUser } from "@/context/UserContext";
 
 export default function KelasPage() {
@@ -29,12 +28,6 @@ export default function KelasPage() {
                             >
                                 Tambah Kelas
                             </Link>
-
-                            <DataExchangeButtons
-                                module="kelas"
-                                fileName="data-kelas.xlsx"
-                                label="Kelas"
-                            />
                         </div>
                     )}
 

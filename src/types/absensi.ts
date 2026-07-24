@@ -64,3 +64,18 @@ export type RiwayatAbsensiItem = {
     created_at?: string;
     updated_at?: string;
 };
+
+export type AbsensiRekapItem = {
+    studentId: number;
+    studentName: string;
+    nisn?: string | null;
+    studyClassId?: number | null;
+    studyClassName: string;
+    present: number;
+    permission: number;
+    sick: number;
+    absent: number;
+    total: number;
+    percentage: number;
+    records: RiwayatAbsensiItem[];
+};

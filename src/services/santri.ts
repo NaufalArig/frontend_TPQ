@@ -123,3 +123,15 @@ export async function deleteSantri(id: number) {
 
     return handleResponse(res, "Gagal menghapus santri");
 }
+
+export async function graduateSantri(id: number) {
+    const token = getToken();
+    const res = await fetch(`${API_URL}/santri/${id}/graduate`, {
+        method: "POST",
+        headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: "application/json",
+        },
+    });
+    return handleResponse(res, "Gagal meluluskan santri");
+}

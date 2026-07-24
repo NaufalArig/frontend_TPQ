@@ -186,9 +186,6 @@ export default function BackupRestorePage() {
                             </div>
                         }
                     >
-                        <div className="rounded-xl border border-yellow-200 bg-yellow-50 p-4 text-sm text-yellow-800">
-                            Setelah hosting, pastikan cron menjalankan <span className="font-semibold">php artisan schedule:run</span> setiap menit agar backup otomatis berjalan.
-                        </div>
 
                         <div className="overflow-hidden rounded-xl border border-gray-200">
                             <div className="overflow-x-auto">

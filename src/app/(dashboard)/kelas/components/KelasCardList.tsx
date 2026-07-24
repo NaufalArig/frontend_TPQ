@@ -13,9 +13,18 @@ import Toast from "@/components/ui/toast/Toast";
 import { useToast } from "@/hooks/useToast";
 import Pagination from "@/components/ui/pagination/Pagination";
 import { useUser } from "@/context/UserContext";
+import { graduateSantri } from "@/services/santri";
 
 type Props = {
     search: string;
+};
+
+const formatDate = (value?: string | null) => {
+    if (!value) return "-";
+    const d = new Date(value);
+    return Number.isNaN(d.getTime())
+        ? "-"
+        : d.toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
 };
 
 type AvailableSantri = {
@@ -57,6 +66,7 @@ export default function KelasCardList({ search }: Props) {
     const [availableSantri, setAvailableSantri] = useState<AvailableSantri[]>([]);
     const [selectedSantriIds, setSelectedSantriIds] = useState<number[]>([]);
     const [assignLoading, setAssignLoading] = useState(false);
+    const [graduatingId, setGraduatingId] = useState<number | null>(null);
 
     const router = useRouter();
     const { user } = useUser();
@@ -169,6 +179,36 @@ export default function KelasCardList({ search }: Props) {
         }
     };
 
+    const handleGraduate = async (santriId: number, nama: string) => {
+        if (
+            !window.confirm(
+                `Luluskan (naik tingkat) santri ${nama}? Santri akan keluar dari kelas ini dan bisa dimasukkan ke kelas berikutnya.`
+            )
+        ) return;
+
+        try {
+            setGraduatingId(santriId);
+            await graduateSantri(santriId);
+
+            // hapus dari daftar di modal
+            setViewStudentsModal((prev) => ({
+                ...prev,
+                santris: prev.santris.filter((s) => s.id !== santriId),
+            }));
+
+            // segarkan jumlah santri di kartu kelas
+            const kelasData = await getKelas();
+            setData(kelasData);
+
+            showToast(`${nama} berhasil diluluskan (naik tingkat)`, "success");
+        } catch (error) {
+            console.error(error);
+            showToast("Gagal meluluskan santri", "error");
+        } finally {
+            setGraduatingId(null);
+        }
+    };
+
     const handleDeleteConfirm = async () => {
         if (!deleteModal.id) return;
 
@@ -260,91 +300,125 @@ export default function KelasCardList({ search }: Props) {
             )}
 
             {viewStudentsModal.show && (
-                <div className="fixed inset-0 z-[99999] flex items-center justify-center">
+                <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4">
                     <div
-                        className="absolute inset-0 bg-black/50"
-                        onClick={() =>
-                            setViewStudentsModal({
-                                show: false,
-                                kelasName: "",
-                                santris: [],
-                            })
-                        }
+                        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+                        onClick={() => setViewStudentsModal({ show: false, kelasName: "", santris: [] })}
                     />
-
-                    <div className="relative z-10 mx-4 w-full max-w-2xl rounded-2xl bg-white p-6 shadow-xl dark:bg-gray-900">
-                        <div className="mb-5 flex items-start justify-between gap-4">
-                            <div>
-                                <h4 className="text-lg font-semibold text-gray-800 dark:text-white">
-                                    Daftar Santri
-                                </h4>
-                                <p className="mt-1 text-sm text-gray-500">
-                                    Kelas:{" "}
-                                    <span className="font-semibold text-gray-700">
-                                        {viewStudentsModal.kelasName}
-                                    </span>
-                                </p>
+                    <div className="relative z-10 w-full max-w-3xl overflow-hidden rounded-2xl bg-white shadow-2xl dark:bg-gray-900">
+                        {/* Header */}
+                        <div className="flex items-start justify-between gap-4 border-b border-gray-100 bg-gradient-to-r from-brand-50 to-white px-6 py-5 dark:border-gray-800 dark:from-gray-800 dark:to-gray-900">
+                            <div className="flex items-center gap-3">
+                                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-100 text-xl">
+                                    &#128101;
+                                </div>
+                                <div>
+                                    <h4 className="text-lg font-semibold text-gray-800 dark:text-white">
+                                        Daftar Santri
+                                    </h4>
+                                    <p className="mt-0.5 text-sm text-gray-500">
+                                        Kelas{" "}
+                                        <span className="font-semibold text-gray-700 dark:text-gray-200">
+                                            {viewStudentsModal.kelasName}
+                                        </span>
+                                        <span className="ml-2 rounded-full bg-brand-100 px-2 py-0.5 text-xs font-medium text-brand-700">
+                                            {viewStudentsModal.santris.length} santri
+                                        </span>
+                                    </p>
+                                </div>
                             </div>
-
                             <button
                                 type="button"
-                                onClick={() =>
-                                    setViewStudentsModal({
-                                        show: false,
-                                        kelasName: "",
-                                        santris: [],
-                                    })
-                                }
-                                className="rounded-lg bg-gray-100 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-200"
+                                onClick={() => setViewStudentsModal({ show: false, kelasName: "", santris: [] })}
+                                className="rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+                                aria-label="Tutup"
+                            >
+                                &#10005;
+                            </button>
+                        </div>
+
+                        {/* Body */}
+                        <div className="p-6">
+                            {viewStudentsModal.santris.length === 0 ? (
+                                <div className="rounded-xl border border-dashed border-gray-300 p-10 text-center">
+                                    <p className="text-3xl">&#128235;</p>
+                                    <p className="mt-2 text-sm text-gray-500">
+                                        Belum ada santri aktif di kelas ini.
+                                    </p>
+                                </div>
+                            ) : (
+                                <div className="max-h-[440px] overflow-y-auto rounded-xl border border-gray-200 dark:border-gray-800">
+                                    <table className="w-full text-sm">
+                                        <thead className="sticky top-0 bg-gray-50 text-left text-xs uppercase tracking-wide text-gray-500 dark:bg-gray-800">
+                                            <tr>
+                                                <th className="w-12 px-4 py-3">No</th>
+                                                <th className="px-4 py-3">Nama Santri</th>
+                                                <th className="px-4 py-3">Status</th>
+                                                <th className="px-4 py-3">Tanggal Masuk</th>
+                                                <th className="px-4 py-3 text-right">Aksi</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                                            {viewStudentsModal.santris.map((santri, index) => (
+                                                <tr key={santri.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                                                    <td className="px-4 py-3 text-gray-400">{index + 1}</td>
+                                                    <td className="px-4 py-3 font-medium capitalize text-gray-700 dark:text-gray-200">
+                                                        {santri.name}
+                                                    </td>
+                                                    <td className="px-4 py-3">
+                                                        <span
+                                                            className={`rounded-full px-2.5 py-1 text-xs font-medium ${santri.status === "active"
+                                                                    ? "bg-green-100 text-green-700"
+                                                                    : santri.status === "pending"
+                                                                        ? "bg-yellow-100 text-yellow-700"
+                                                                        : "bg-gray-100 text-gray-600"
+                                                                }`}
+                                                        >
+                                                            {santri.status === "active"
+                                                                ? "Aktif"
+                                                                : santri.status === "pending"
+                                                                    ? "Pending"
+                                                                    : santri.status}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-4 py-3 text-gray-500">
+                                                        {formatDate(santri.join_date)}
+                                                    </td>
+                                                    <td className="px-4 py-3 text-right">
+                                                        {santri.status === "active" ? (
+                                                            <button
+                                                                onClick={() => handleGraduate(santri.id, santri.name)}
+                                                                disabled={graduatingId === santri.id}
+                                                                className="rounded-lg bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-600 hover:bg-emerald-100 disabled:opacity-60"
+                                                            >
+                                                                {graduatingId === santri.id ? "Memproses..." : "Luluskan"}
+                                                            </button>
+                                                        ) : (
+                                                            <span className="text-xs text-gray-300">-</span>
+                                                        )}
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Footer */}
+                        <div className="flex justify-end border-t border-gray-100 px-6 py-4 dark:border-gray-800">
+                            <button
+                                type="button"
+                                onClick={() => setViewStudentsModal({ show: false, kelasName: "", santris: [] })}
+                                className="rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-200"
                             >
                                 Tutup
                             </button>
                         </div>
-
-                        {viewStudentsModal.santris.length === 0 ? (
-                            <div className="rounded-xl border border-dashed border-gray-300 p-8 text-center">
-                                <p className="text-sm text-gray-500">
-                                    Belum ada santri aktif di kelas ini.
-                                </p>
-                            </div>
-                        ) : (
-                            <div className="max-h-[420px] overflow-y-auto rounded-xl border border-gray-200">
-                                <table className="w-full text-sm">
-                                    <thead className="sticky top-0 bg-gray-50 text-left text-gray-500">
-                                        <tr>
-                                            <th className="px-4 py-3">No</th>
-                                            <th className="px-4 py-3">Nama Santri</th>
-                                            <th className="px-4 py-3">Status</th>
-                                            <th className="px-4 py-3">Tanggal Masuk</th>
-                                        </tr>
-                                    </thead>
-
-                                    <tbody className="divide-y divide-gray-100">
-                                        {viewStudentsModal.santris.map((santri, index) => (
-                                            <tr key={santri.id}>
-                                                <td className="px-4 py-3 text-gray-500">
-                                                    {index + 1}
-                                                </td>
-                                                <td className="px-4 py-3 font-medium text-gray-700">
-                                                    {santri.name}
-                                                </td>
-                                                <td className="px-4 py-3">
-                                                    <span className="rounded-full bg-green-100 px-2.5 py-1 text-xs font-medium text-green-700">
-                                                        {santri.status === "active" ? "Aktif" : santri.status}
-                                                    </span>
-                                                </td>
-                                                <td className="px-4 py-3 text-gray-500">
-                                                    {santri.join_date || "-"}
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        )}
                     </div>
                 </div>
             )}
+
             {assignModal.show && (
                 <div className="fixed inset-0 z-[99999] flex items-center justify-center">
                     <div
