@@ -1,8 +1,0 @@
-⨯ Another next dev server is already running.
-
-- Local:        http://localhost:3001
-- PID:          23044
-- Dir:          C:\laragon\www\tpq-frontend
-- Log:          .next\dev\logs\next-development.log
-
-Run taskkill /PID 23044 /F to stop it.
