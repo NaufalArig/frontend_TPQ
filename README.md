@@ -1,36 +1,149 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# TPQ Administration System - Frontend
 
-## Getting Started
+Frontend untuk sistem administrasi Taman Pendidikan Al-Qur'an (TPQ) yang dibangun menggunakan Next.js dan TypeScript.
 
-First, run the development server:
+Aplikasi ini digunakan untuk mengelola data administrasi TPQ melalui antarmuka web, mulai dari data santri, guru, kelas, absensi, keuangan SPP, aset, hingga monitoring melalui dashboard.
+
+Backend aplikasi menggunakan Laravel REST API dan database MySQL.
+
+## Tech Stack
+
+* Next.js
+* React
+* TypeScript
+* Tailwind CSS
+* Lucide React
+* REST API
+
+## Features
+
+* Login dan autentikasi pengguna
+* Dashboard
+* Manajemen santri
+* Manajemen guru
+* Manajemen kelas
+* Absensi santri
+* Rekap dan monitoring absensi
+* Keuangan SPP
+* Manajemen aset
+* Notifikasi
+* Laporan
+* Pencarian dan filter data
+* Hak akses berdasarkan role
+
+## Project Structure
+
+Struktur utama frontend:
+
+```text
+tpq-frontend/
+├── app/
+├── components/
+├── services/
+├── types/
+├── public/
+├── package.json
+└── ...
+```
+
+`app/` digunakan untuk halaman dan routing aplikasi.
+
+`components/` berisi komponen UI yang digunakan kembali pada beberapa halaman.
+
+`services/` digunakan untuk komunikasi dengan REST API backend.
+
+`types/` berisi definisi tipe TypeScript yang digunakan dalam aplikasi.
+
+## Requirements
+
+Sebelum menjalankan project, pastikan sudah tersedia:
+
+* Node.js
+* npm
+* Git
+
+Backend Laravel juga harus sudah berjalan karena frontend mengambil data melalui API.
+
+## Installation
+
+Clone repository:
+
+```bash
+git clone https://github.com/USERNAME/tpq-frontend.git
+cd tpq-frontend
+```
+
+Install dependency:
+
+```bash
+npm install
+```
+
+Buat file `.env.local`:
+
+```env
+NEXT_PUBLIC_API_URL=http://127.0.0.1:8000/api
+```
+
+Sesuaikan URL dengan alamat backend yang digunakan.
+
+Jalankan aplikasi:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Kemudian buka:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```text
+http://localhost:3000
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Backend
 
-## Learn More
+Frontend ini membutuhkan backend Laravel untuk menyediakan data dan proses bisnis.
 
-To learn more about Next.js, take a look at the following resources:
+Repository backend:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```text
+tpq-backend
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Komunikasi antara frontend dan backend dilakukan melalui REST API.
 
-## Deploy on Vercel
+```text
+Next.js
+   │
+   │ HTTP Request
+   ▼
+Laravel API
+   │
+   ▼
+MySQL
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Authentication pada aplikasi menggunakan mekanisme yang disediakan oleh backend Laravel.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Production Build
+
+Untuk membuat build production:
+
+```bash
+npm run build
+```
+
+Menjalankan hasil build:
+
+```bash
+npm start
+```
+
+## Environment
+
+File `.env.local` digunakan untuk konfigurasi environment lokal.
+
+Jangan memasukkan credential, token, atau informasi sensitif ke repository.
+
+## Author
+
+Wong Sepele
